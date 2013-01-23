@@ -1,0 +1,361 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5em;
+  background: #feffff;
+}
+#content_container {
+  display: block;
+  position: relative;
+  top: 0;
+  overflow: hidden;
+  min-height: 100%;
+  width: 550px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  background: url(/static/img/python-powered-w-200x80.png) no-repeat 1.2em bottom;
+}
+#content_container.collapsed {
+  display: none;
+}
+#expansion_grabber {
+  display: none;
+}
+#expansion_grabber.expandable {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  width: 25px;
+  text-align: right;
+  padding-right: 0.2em;
+  border-bottom: 1px solid gray;
+  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 100%;
+  background: #fafafa;
+  cursor: pointer;
+  display: block;
+}
+#expansion_grabber.expandable .chapter {
+  font-size: 14pt;
+  font-weight: bold;
+  color: #999;
+  text-decoration: none;
+}
+#collapser {
+  position: absolute;
+  padding: 0 0.5em 0 1.2em;
+  border: 1px solid gray;
+  border-left: none;
+  border-top: none;
+  background: #fafafa;
+  border-bottom-right-radius: 5px;
+  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.2);
+  margin: 0;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+}
+#workspace {
+  display: block;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 550px;
+  background: #ddf;
+}
+#workspace.fill {
+  right: 25px;
+}
+#workspace_bottom {
+  padding: 5px 10px 10px 10px;
+  display: block;
+  position: absolute;
+  top: 70%;
+  bottom: 0;
+  right: 0;
+  left: 0;
+}
+#workspace_top {
+  display: block;
+  position: absolute;
+  top: 0;
+  padding: 10px 10px 5px 10px;
+  bottom: 30%;
+  right: 0;
+  left: 0;
+}
+#output {
+  display: block;
+  line-height: 1.1em;
+  font-size: 12pt;
+  border: 1px solid gray;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background: white;
+}
+.CodeMirror {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border: 1px solid gray;
+  width: 100%;
+  height: 100%;
+  font-size: 12pt;
+}
+.CodeMirror .CodeMirror-scroll {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  height: 100%;
+  background: #ffe;
+}
+.CodeMirror .CodeMirror-gutter {
+  border-top-left-radius: 6px;
+}
+#workspace_actions {
+  position: absolute;
+  display: block;
+  top: 1em;
+  right: 1em;
+  z-index: 10;
+}
+#workspace_actions div {
+  display: block;
+  position: static;
+  text-align: right;
+}
+ul.more {
+  display: none;
+  position: relative;
+  list-style: none;
+  top: 2px;
+  float: right;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid #ccc;
+  margin: 0px;
+  padding: 5px 0;
+}
+#workspace_actions.expanded ul.more {
+  display: block;
+}
+ul.more li {
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+}
+ul.more li.highlight {
+  color: #e77;
+  font-weight: bold;
+}
+#workspace_actions a.highlight {
+  color: #444;
+  background-color: #faa;
+}
+
+.content {
+  display: block;
+}
+#content-header {
+  padding: 0 1.2em;
+}
+#content-header h1 {
+  padding: 1.2em 0 .2em;
+  font-size: 16px;
+  font-weight: bold;
+}
+#content-header h1 .toc {
+  padding: 0 .2em;
+  border: 1px solid #eed;
+  background-color: #fefefe;
+  border-radius: 5px;
+  cursor: pointer;
+}
+#chapter-num {
+  display: block;
+  position: absolute;
+  font-size: 54px;
+  color: #999;
+  top: 20px;
+  right: 30px;
+}
+#chapter-num .nav {
+  font-size: 40px;
+  color: #ddf;
+  text-decoration: none;
+}
+#chapter-num .nav.hidden {
+  color: #f9f9ff;
+  cursor: default;
+}
+
+#toc-trigger {
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 200px;
+}
+#toc-content li {
+  margin: 0 0;
+}
+.content .information {
+  padding: 0 1.2em 6em 1.2em;
+  display: block;
+  position: relative;
+}
+.content .information h1 {
+  color: #229;
+  font-weight: bold;
+  font-size: 26px;
+}
+.content .information h2 {
+  color: #229;
+  font-weight: bold;
+  font-size: 20px;
+  margin-top: 1em;
+}
+.content .information p {
+  font-size: 12pt;
+  margin-top: 8pt;
+  margin-bottom: 14pt;
+}
+.content .information ul {
+  font-size: 12pt;
+  line-height: 1.2em;
+  margin: 5px 0;
+}
+.content .information li {
+  font-size: 12pt;
+  padding: .2em 0;
+  margin: 5px 0;
+}
+.content .information pre {
+  font-size: 13pt;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+.content .information .code {
+  font-family: "Lucida Console", Monaco, monospace;
+  background-color: #ffe;
+  border: 1px solid #eed;
+  border-radius: 5px;
+  white-space: nowrap;
+  padding: 0 .3em;
+}
+#tutorial_nav {
+  position: absolute;
+  display: block;
+  right: 0;
+  bottom: 15px;
+  text-align: right;
+  padding: .1em .5em;
+  font-size: 54px;
+}
+#tutorial_nav .nav {
+  color: #339;
+  font-size: 45px;
+  margin-left: 0;
+  text-decoration: none;
+}
+#tutorial_nav .nav.hidden {
+  color: #ccf;
+  cursor: default;
+}
+
+.stdout {
+  margin: 0;
+}
+.stderr {
+  font-style: italic;
+  color: #a44;
+  margin: 0;
+}
+
+.actions .button {
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+  border: 1px solid gray;
+  border-radius: 5px;
+  padding: 0 4px;
+  font-size: 15px;
+  font-weight: bold;
+  background: #dde;
+  border: 2px solid #559;
+  text-align: right;
+}
+
+.actions #run.button {
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+  border-right-width: 1px;
+}
+.actions #more.button {
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  border-left-width: 0px;
+}
+
+@media screen and (max-width: 1100px) {
+  #content_container {
+    width: 400px;
+  }
+  #workspace {
+    right: 400px;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  #content_container {
+    width: 100%;
+    padding-bottom: 80px;
+    min-height: 0;
+  }
+  #workspace, #workspace_top, #workspace_bottom {
+    position: static;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+  }
+  #workspace {
+    margin-top: 25px;
+  }
+  .CodeMirror {
+    position: relative;
+    height: 18em;
+  }
+  #output {
+    height: 6em;
+  }
+  .content {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  #instructions {
+    padding-bottom: 0;
+  }
+  #workspace_actions {
+    position: absolute;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    right: 1em;
+    margin-top: 1em;
+  }
+  #expansion_grabber.expandable {
+    right: 0px;
+    top: 0px;
+    width: 3.5em;
+    height: 25px;
+    text-align: right;
+    padding-left: 0.2em;
+    border-left: 1px solid gray;
+    border-bottom-left-radius: 5px;
+    box-shadow: 0 5px 8px rgba(0, 0, 0, 0.2);
+    margin-left: 100%;
+  }
+}

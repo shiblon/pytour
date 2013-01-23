@@ -1,0 +1,76 @@
+<!doctype html>
+<html ng-app="runcode">
+<head>
+<title>Interactive Python Tutorial</title>
+<link rel="icon" type="image/png" href="/static/img/python-powered-h-50x65.png">
+<link rel="stylesheet" href="/static/VV1/angular/angular-ui.min.css">
+<link rel="stylesheet" href="/static/VV1/css/code.css">
+<link rel="stylesheet" href="/static/VV1/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="/static/VV1/codemirror/theme/neat.css">
+<script src="/static/VV1/jquery/jquery-1.8.2.min.js"></script>
+<script src="/static/VV1/codemirror/lib/codemirror.js"></script>
+<script src="/static/VV1/codemirror/mode/python/python.js"></script>
+<script src="/static/VV1/angular/angular.min.js"></script>
+<script src="/static/VV1/angular/angular-sanitize.min.js"></script>
+<script src="/static/VV1/angular/angular-ui.min.js"></script>
+<script src="/static/VV1/js/app.js"></script>
+<script src="/static/VV1/js/filters.js"></script>
+<script src="/static/VV1/js/controllers.js"></script>
+</head>
+<body ng-controller="CodeCtrl">
+<div id="content_container" ng-class="{'collapsed': contentCollapsed}">
+  <div id="toc-trigger">
+    <a href="/doc" target="_new">Docs</a>
+  </div>
+  <div id="content-header">
+    <h1>Interactive Python Tutorial <span class="toc" ng-click="tocShowing = !tocShowing">&#x25bc;</span></h1>
+    <div id="collapser" ng-click="contentCollapsed=true">&gt;&gt;</div>
+    <div id="chapter-num">
+      <a class="nav" ng-class="{'hidden': chapter <= 1}" href="#/{{prevChapter()}}">&#x25c0;</a>{{chapter}}<a class="nav" ng-class="{'hidden': chapter >= tutorials.length }" href="#/{{nextChapter()}}">&#x25b6;</a>
+    </div>
+  </div>
+  <div id="toc" class="content" ng-show="tocShowing">
+    <div id="toc-content" class="information">
+      <ol>
+        <li ng-repeat="t in tutorials"><a href="#/{{t.index + 1}}">{{t.title}}</a></li>
+      </ol>
+    </div>
+  </div>
+  <div id="slide" class="content" ng-show="!tocShowing">
+    <div id="instructions" class="information">
+      <h1>{{tutorial.title}}</h1>
+      <div ng-bind-html="tutorial.description | linky | paragraphs"></div>
+    </div>
+    <div id="tutorial_nav">
+      <a class="nav" ng-class="{'hidden': chapter <= 1}" href="#/{{prevChapter()}}">&#x25c0;</a>{{chapter}}<a class="nav" ng-class="{'hidden': chapter >= tutorials.length }" href="#/{{nextChapter()}}">&#x25b6;</a>
+    </div>
+  </div>
+</div>
+<div id="expansion_grabber" ng-class="{'expandable': contentCollapsed}" ng-click="contentCollapsed=false">&lt;&lt;
+  <span class="chapter">{{chapter}}</span>
+</div>
+<div id="workspace" ng-class="{'fill': contentCollapsed}">
+  <div id="workspace_actions" class="actions" ng-class="{'expanded': isExpanded}">
+    <div>
+      <a id="run" class="button" ng-click="runCode(code)">RUN</a><a id="more" class="button" ng-click="isExpanded = !isExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
+    </div>
+    <ul ng-click="isExpanded=false" class="more">
+      <li ng-click="clearOutput()">Clear Output Window</li>
+      <li ng-click="clearCode()">Clear Code Window</li>
+      <li><hr></li>
+      <li ng-click="revertCode()" ng-class="{'highlight': dirty()}">Restore Slide Code</li>
+      <li ng-click="revertAll()" ng-class="{'highlight': dirty()}">Restore ALL Slides</li>
+    </ul>
+  </div>
+  <div id="workspace_top">
+    <textarea name="codetext" ui-codemirror="{lineNumbers: true, theme: 'neat', indentWithTabs: false, tabSize: 2, indentUnit: 2, extraKeys: {Tab: 'indentMore', 'Shift-Enter': doNothing } }" ng-model="code"></textarea>
+  </div>
+  <div id="workspace_bottom">
+    <div id="output">
+      <pre class="stdout">{{out}}</pre>
+      <pre class="stderr">{{err}}</pre>
+    </div>
+  </div>
+</div>
+</body>
+</html>
