@@ -2,20 +2,27 @@
 <html ng-app="runcode">
 <head>
 <title>Interactive Python Tutorial</title>
-<link rel="icon" type="image/png" href="/static/img/python-powered-h-50x65.png">
-<link rel="stylesheet" href="/static/VV1/angular/angular-ui.min.css">
-<link rel="stylesheet" href="/static/VV1/css/code.css">
-<link rel="stylesheet" href="/static/VV1/codemirror/lib/codemirror.css">
-<link rel="stylesheet" href="/static/VV1/codemirror/theme/neat.css">
-<script src="/static/VV1/jquery/jquery-1.8.2.min.js"></script>
-<script src="/static/VV1/codemirror/lib/codemirror.js"></script>
-<script src="/static/VV1/codemirror/mode/python/python.js"></script>
-<script src="/static/VV1/angular/angular.min.js"></script>
-<script src="/static/VV1/angular/angular-sanitize.min.js"></script>
-<script src="/static/VV1/angular/angular-ui.min.js"></script>
-<script src="/static/VV1/js/app.js"></script>
-<script src="/static/VV1/js/filters.js"></script>
-<script src="/static/VV1/js/controllers.js"></script>
+<link rel="icon" type="image/png" href="img/python-powered-h-50x65.png">
+<link rel="stylesheet" href="angular/angular-ui.min.css">
+<link rel="stylesheet" href="css/code.css">
+<link rel="stylesheet" href="codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="codemirror/theme/neat.css">
+<!-- Start PyPy.js
+     These might not be found, so we adapt elsewhere to this being optional.
+     If it isn't there, it assumes it needs to talk to a server to run code. -->
+<script src="pypyjs/pypy-nojit.js-0.3.1/lib/Promise.min.js"></script>
+<script src="pypyjs/pypy-nojit.js-0.3.1/lib/FunctionPromise.js"></script>
+<script src="pypyjs/pypy-nojit.js-0.3.1/lib/PyPy.js"></script>
+<!-- End PyPy.js -->
+<script src="jquery/jquery-1.8.2.min.js"></script>
+<script src="codemirror/lib/codemirror.js"></script>
+<script src="codemirror/mode/python/python.js"></script>
+<script src="angular/angular.min.js"></script>
+<script src="angular/angular-sanitize.min.js"></script>
+<script src="angular/angular-ui.min.js"></script>
+<script src="js/app.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/controllers.js"></script>
 </head>
 <body ng-controller="CodeCtrl">
 <div id="content_container" ng-class="{'collapsed': contentCollapsed}">

@@ -16,7 +16,9 @@ from wsgiref import simple_server
 
 __author__ = "Chris Monson <shiblon@gmail.com>"
 
-class Redirect(Exception): pass
+class StatusError(Exception): pass
+class Redirect(StatusError): pass
+class NotFound(StatusError): pass
 
 class App(object):
   def __init__(self, doc_url=""):
@@ -46,6 +48,8 @@ class App(object):
     except Redirect, e:
       status = "302 Found"
       response_headers = [('Location', e.message)]
+    except NotFound, e:
+      status = "404 Not Found"
     except:
       status = "500 Internal Server Error"
       response_body = traceback.format_exc()
@@ -64,14 +68,12 @@ class App(object):
             'html': 'text/html',
             'txt': 'text/plain'}.get(ext, 'text/plain')
 
+  def get_root(self, path, environ, headers):
+    return open("static/index.html").read()
+
   def GET(self, path, environ, headers):
     headers['Content-Type'] = self.mime_type_from_path(path)
-    if path.startswith('/static/'):
-      # Remove dummy path elements starting with VV and remove parent directory
-      # references.
-      pieces = [p for p in path[1:].split('/') if p != '..' and p[:2] != 'VV']
-      return open(os.path.join(*pieces)).read()
-    elif path == '/':
+    if path == '/':
       headers['Content-Type'] = 'text/html'
       return open("static/index.html").read()
     elif path == '/doc':
@@ -114,7 +116,15 @@ class App(object):
       headers['Content-Type'] = 'application/json'
       return json.dumps(tutorial_list)
     else:
-      return "Could not find file."
+      # Must be a static file:
+      # Remove remove parent directory references.
+      pieces = [p for p in path.split('/') if p and p != '..']
+      # Add static directory.
+      pieces = ["static"] + pieces
+      relpath = os.path.join(*pieces)
+      if not os.path.exists(relpath):
+        raise NotFound(relpath)
+      return open(relpath).read()
 
   def POST(self, path, environ, headers):
     headers['Content-Type'] = 'application/json'
