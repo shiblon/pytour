@@ -102,11 +102,11 @@ class App(object):
             return title, description, src
           return "", "", ""
       tutorial_json = ''.join(
-        line for line in open(os.path.join("tutorials", "tutorials.json"))
+        line for line in open(os.path.join("static", "tutorials", "tutorials.json"))
         if line.strip() and not line.lstrip().startswith('//'))
       tutorial_list = json.loads(tutorial_json)
       for i, name in enumerate(tutorial_list):
-        fname = os.path.join("tutorials", "%s.py" % name)
+        fname = os.path.join("static", "tutorials", "%s.py" % name)
         title, description, code = parse_code_file(fname)
         tutorial_list[i] = {"name": name,
                             "index": i,

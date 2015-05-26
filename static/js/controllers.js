@@ -168,6 +168,10 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     });
     vm.ready.then(onLoaded);
     return function(code) {
+      if (!$scope.vmLoaded) {
+        console.log("vm not ready - ignoring request to run code")
+        return;
+      }
       $scope.clearOutput();
       try {
         // First we clean up the global namespace and import pydoc to get the help function.

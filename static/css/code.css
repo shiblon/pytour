@@ -293,6 +293,10 @@ ul.more li.highlight {
   border-bottom-right-radius: 0px;
   border-right-width: 1px;
 }
+.actions #run.button.hidden {
+  color: #bbc;
+  cursor: default;
+}
 .actions #more.button {
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;

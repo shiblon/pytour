@@ -7,22 +7,19 @@ Python interpreter is |help|. This is a very
 useful function, because it gives you basic
 documentation on just about anything you want.
 
-For this in-browser tutorial, a close (but incomplete)
-approximation of the help function is included,
-just to give you a feel for what it does.
+For this in-browser tutorial, the *help* function
+is included, just to give you a feel for what it
+does.
 
 You can also run "pydoc" from the commandline, or
-use the documentation server with this tutorial
-using the *Docs* link above (the |__builtin__|
-link is particularly useful).
-
-More complete documentation is always available at
-http://python.org/doc/, including a nice tutorial.
+access http://python.org/doc/ directly or from the
+link above.
 
 Exercises
 
-- Go to the *Docs* link and click on
-  |__builtin__|.
+- Go to the *Docs* link, find Python 2.x, Library
+  Reference, and click on
+  |Built-in Functions| (direct link here: https://docs.python.org/2/library/functions.html).
 
 - Print |help(int)|. Did it output what you expected?
 

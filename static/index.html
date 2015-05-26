@@ -29,7 +29,7 @@
 <body ng-controller="CodeCtrl">
 <div id="content_container" ng-class="{'collapsed': contentCollapsed}">
   <div id="toc-trigger">
-    <a href="/doc" target="_new">Docs</a>
+    <a href="http://python.org/doc/" target="pydocs">Python Docs</a>
   </div>
   <div id="content-header">
     <h1>Interactive Python Tutorial <span class="toc" ng-click="tocShowing = !tocShowing">&#x25bc;</span></h1>
@@ -61,7 +61,7 @@
 <div id="workspace" ng-class="{'fill': contentCollapsed}">
   <div id="workspace_actions" class="actions" ng-class="{'expanded': isExpanded}">
     <div>
-      <a id="run" class="button" ng-click="runCode(code)">RUN</a><a id="more" class="button" ng-click="isExpanded = !isExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
+      <a id="run" class="button" ng-class="{'hidden': !vmLoaded}" ng-click="runCode(code)" ng-bind-html="vmLoaded | iif : 'RUN' : '......'"></a><a id="more" class="button" ng-click="isExpanded = !isExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
     </div>
     <ul ng-click="isExpanded=false" class="more">
       <li ng-click="clearOutput()">Clear Output Window</li>
