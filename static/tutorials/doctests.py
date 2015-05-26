@@ -19,8 +19,10 @@ interactive interpreter, followed by the results
 you would see after it executes. You can then
 easily test whether that actually happens or not.
 
-Doctests are run by importing |doctest| and
-running |doctest.testmod()|.
+Doctests are *usually* run by importing |doctest| and
+running |doctest.testmod()|. In our web version,
+however, we just run |_testmod|, a special
+facility for this environment.
 
 We'll use doctests for the rest of the tutorials
 to help with the exercises and to show how things
@@ -60,6 +62,4 @@ def less_than_five(a):
 
 # Actually run the doctests:
 print "Running tests - no news is good news:"
-
-import doctest
-doctest.testmod()
+_testmod()

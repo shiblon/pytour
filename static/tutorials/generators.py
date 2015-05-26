@@ -39,7 +39,7 @@ Exercises
   what it returns).
 
 - Write a |for| loop in the main code (replace the
-  use of |doctest.testmod| if you want) that
+  use of |_testmod| if you want) that
   outputs the result of |parsed_measurements(...)|
   with some lines of your own.
 """
@@ -80,6 +80,5 @@ def parsed_measurements(lines):
 
 
 if __name__ == '__main__':
-  import doctest
-  if doctest.testmod().failed == 0:
+  if _testmod().failed == 0:
     print "Success!"

@@ -272,6 +272,14 @@
         "_curses"
       ]
     }, 
+    "_doctest": {
+      "file": "_doctest.py", 
+      "imports": [
+        "StringIO", 
+        "contextlib", 
+        "sys"
+      ]
+    }, 
     "_elementtree": {
       "file": "_elementtree.py", 
       "imports": [

@@ -44,8 +44,7 @@ def enumerator(seq):
 
 
 if __name__ == '__main__':
-  import doctest
-  if not doctest.testmod().failed:
+  if not _testmod().failed:
     print "Success!"
 
   # Note how, when we know we have a list of pairs, we

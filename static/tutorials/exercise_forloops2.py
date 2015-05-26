@@ -61,6 +61,5 @@ def fibonacci(n):
 
 
 if __name__ == '__main__':
-  import doctest
-  if not doctest.testmod().failed:
+  if not _testmod().failed:
     print "Success!"

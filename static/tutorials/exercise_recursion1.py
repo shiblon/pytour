@@ -65,6 +65,5 @@ def add_all(seq):
   # return seq[-1] + add_all(seq[:-1])
 
 
-import doctest
-if doctest.testmod().failed == 0:
+if _testmod().failed == 0:
   print "Success!"

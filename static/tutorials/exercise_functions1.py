@@ -45,6 +45,5 @@ def reverse_a(s):
   # TODO: Fill this in.
 
 
-import doctest
-if doctest.testmod().failed == 0:
+if _testmod().failed == 0:
   print "Success!"

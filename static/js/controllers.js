@@ -224,7 +224,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     var vm = new PyPyJS({
       stdout: $scope.addOutputText,
       stderr: $scope.addErrorText,
-      autoLoadModules: true,
+      autoLoadModules: false,
     });
     vm.ready.then(onLoaded);
     return function(code) {
@@ -234,17 +234,13 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       }
       $scope.clearOutput();
       try {
-        // First we clean up the global namespace and import pydoc to get the help function.
-        vm.exec(
-          "_KILL = set(vars().keys())\n" +
-          "for _K in _KILL:\n" +
-          "  if _K not in ('__builtins__', '__package__', '__name__', '__doc__', '_K'): del vars()[_K]\n" +
-          "del _K\n" +
-          "del _KILL\n" +
-          "from pydoc import help\n").then(function() {
-          return vm.exec(code).catch(function(err) {
-            console.log(err);
-            $scope.addErrorText(err.trace);
+        vm.loadModuleData("contextlib").then(function() {
+          // Clean up the global namespace, get the help function, and create a doctest.
+          vm.execfile("../../../../../_preamble.py").then(function() {
+            return vm.exec(code).catch(function(err) {
+              console.log(err);
+              $scope.addErrorText(err.trace);
+            });
           });
         });
       } catch (err) {

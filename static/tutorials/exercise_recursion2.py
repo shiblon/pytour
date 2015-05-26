@@ -58,6 +58,5 @@ def fibonacci(n):
 
 
 
-import doctest
-if doctest.testmod().failed == 0:
+if _testmod().failed == 0:
   print "Success!"
