@@ -4,7 +4,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   $(document).keydown(function(event) {
     var e = window.event || event;
     if (e.keyCode == 13 && e.shiftKey) {  // shift-enter
-      $scope.runCode();
+      $scope.runCode($scope.code);
     } else if (e.keyCode == 33) {  // page up
       $scope.location.path("/" + $scope.prevChapter());
       $scope.$apply();
@@ -125,14 +125,110 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     }, 5000);
   });
 
-  $scope.runCode = function() {
-    $http.post("/runcode", $scope.code).
-      success(function(data) {
-        $scope.out = data.stdout;
-        $scope.err = data.stderr;
-        $("#output").scrollTop(0);
-      });
+  $scope.addOutputText = function(text) {
+    $scope._addText(text, "stdout");
   };
+
+  $scope.addErrorText = function(text) {
+    $scope._addText(text, "stderr");
+  };
+
+  $scope._addText = function(text, elementClass) {
+    var output = document.getElementById("output");
+    var scrolled = output.scrollHeight - output.clientHeight - output.scrollTop;
+    var scrollDown = scrolled < 12;
+    var pre = document.createElement("pre");
+    pre.className = elementClass;
+    pre.appendChild(document.createTextNode(text));
+    output.appendChild(pre);
+    if (scrollDown) {
+      output.scrollTop = output.scrollHeight - output.clientHeight;
+    }
+  };
+
+  // Creates a function that accepts code and runs it on the server.
+  function makeRunOnServer() {
+    return function(code) {
+      $scope.clearOutput();
+      $http.post("/runcode", code).success(function(data) {
+        $scope.addOutputText(data.stdout);
+        $scope.addErrorText(data.stderr);
+      });
+    };
+  }
+
+  // Creates a function that runs code on PyPy.js.
+  // onLoaded is called when the vm has finished initializing.
+  function makeRunOnPyPyJS(onLoaded) {
+    // Initialize PyPy.js
+    var vm = new PyPyJS({
+      stdout: $scope.addOutputText,
+      stderr: $scope.addErrorText,
+      autoLoadModules: true,
+    });
+    vm.ready.then(onLoaded);
+    return function(code) {
+      $scope.clearOutput();
+      try {
+        // First we clean up the global namespace and import pydoc to get the help function.
+        vm.exec(
+          "_KILL = set(vars().keys())\n" +
+          "for _K in _KILL:\n" +
+          "  if _K not in ('__builtins__', '__package__', '__name__', '__doc__', '_K'): del vars()[_K]\n" +
+          "del _K\n" +
+          "del _KILL\n" +
+          "from pydoc import help\n").then(function() {
+          return vm.exec(code).catch(function(err) {
+            console.log(err);
+            $scope.addErrorText(err.trace);
+          });
+        });
+      } catch (err) {
+        console.log(err);
+        $scope.addErrorText("Internal Error: " + $scope.prettyError(err));
+      }
+    };
+  }
+
+  // prettyError is used to make javascript exceptions easier on the eyes.
+  $scope.prettyError = function(err) {
+    // If we are dealing with Firefox, just output the message.
+    if (err.stack[0] == '@') {
+      return err.name + ": " + err.message;
+    }
+    var lines = err.stack.split(/\r\n|\r|\n/);
+    var output = [lines[0]];
+    // Now only keep lines that have <anonymous> as the file name, and filter
+    // out irrelevant text from those.
+    for (var i = 1; i < lines.length; i++) {
+      var line = lines[i];
+      if (line.match(/^\s*at .*runCode/)) {
+        break;
+      }
+      line = line.replace(/\([^()]*\)/, '');
+      line = line.replace(/\s*\(.*:(\d+):(\d+)\)$/, ":$1:$2");
+      line = line.replace("Object.eval", "_Main_");
+      output.push(line);
+    }
+    return output.join("\n");
+  };
+
+  // If PyPyJS loaded, we can use that. Otherwise, run this thing on the server.
+  (function(document, window, undefined) {
+    $scope.vmLoaded = false;
+
+    if (window.PyPyJS !== undefined) {
+      console.log("using client-side PyPy.js implementation");
+      $scope.runCode = makeRunOnPyPyJS(function() {
+        console.log("vm loaded");
+        $scope.vmLoaded = true;
+      });
+    } else {
+      console.log("using server-side Python implementation");
+      $scope.runCode = makeRunOnServer();
+      $scope.vmLoaded = true;
+    }
+  }(document, window))
 
   // This is useful for binding keys in the code window to do
   // nothing at all. We can't, for whatever reason, define this
@@ -145,9 +241,11 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   $scope.doNothing = function(e) {}
 
   $scope.clearOutput = function() {
-    $scope.out = "";
-    $scope.err = "";
-  };
+    var output = document.getElementById("output");
+    while (output.lastChild) {
+      output.removeChild(output.lastChild);
+    }
+  }
 
   $scope.clearCode = function() {
     $scope.code = "";
