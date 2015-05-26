@@ -40,11 +40,11 @@ Exercise
 
 # If no name is specified when this is called, the
 # default value is used.
-def greet(greeting, name='Schätzli'):
+def greet(greeting, name='Partner'):
   print greeting + ',', name + '!'
 
 # Use the default name.
-greet("Grüezi")
+greet("Howdy")
 
 # Use our supplied name.
 greet("Hello", "Honey")

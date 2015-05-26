@@ -66,7 +66,8 @@ class App(object):
     return {'js': 'application/javascript',
             'css': 'text/css',
             'html': 'text/html',
-            'txt': 'text/plain'}.get(ext, 'text/plain')
+            'txt': 'text/plain',
+            'py': 'text/plain'}.get(ext, 'text/plain')
 
   def get_root(self, path, environ, headers):
     return open("static/index.html").read()
@@ -78,43 +79,6 @@ class App(object):
       return open("static/index.html").read()
     elif path == '/doc':
       raise Redirect(self.doc_url)
-    elif path == '/tutorials':
-      def parse_code_file(fname):
-        """Given a filename, return title, description, and code."""
-        with open(fname) as f:
-          lineiter = f
-          # Remove all leading comments (useful for specifying vim or emacs
-          # settings without confusing things in the presentation).
-          # Also remove leading blank lines. In short, stop when we find a
-          # non-comment non-blank.
-          for line in lineiter:
-            if line.strip() and not re.match(r'^\s*#.*$', line):
-              break
-          remaining_text = line + ''.join(lineiter)
-          match = re.match(r'(?ms)\s*"""(.*?)\n\s*(.*?)"""\s+(.*)$',
-                           remaining_text)
-          if match:
-            # Eval to make sure we handle escaping properly.
-            title = ast.literal_eval('"""%s"""' % match.group(1))
-            description = ast.literal_eval('"""%s"""' % match.group(2))
-            # Strip out '__doc__ =' from the remaining source.
-            src = re.sub(r'^(\s*)__doc__\s*=\s*', r'\1', match.group(3))
-            return title, description, src
-          return "", "", ""
-      tutorial_json = ''.join(
-        line for line in open(os.path.join("static", "tutorials", "tutorials.json"))
-        if line.strip() and not line.lstrip().startswith('//'))
-      tutorial_list = json.loads(tutorial_json)
-      for i, name in enumerate(tutorial_list):
-        fname = os.path.join("static", "tutorials", "%s.py" % name)
-        title, description, code = parse_code_file(fname)
-        tutorial_list[i] = {"name": name,
-                            "index": i,
-                            "title": title,
-                            "description": description,
-                            "code": code}
-      headers['Content-Type'] = 'application/json'
-      return json.dumps(tutorial_list)
     else:
       # Must be a static file:
       # Remove remove parent directory references.

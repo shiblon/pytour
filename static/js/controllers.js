@@ -81,37 +81,97 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   // TOC should be off when we start.
   $scope.tocShowing = false;
 
-  $http.get("/tutorials").
-    success(function(data) {
-      $scope.tutorials = data;
-      $scope.tutorial = $scope.tutorials[$scope.chapter-1];
-      $scope.loadCode();
+  $scope.parseTutorial = function(text) {
+    var lines = text.split(/\r\n|\n|\r/);
+    // If the file starts with comments right at the beginning, strip them off
+    // (typically directives to editors).
+    var cur = 0;
+    for (; cur<lines.length; cur++) {
+      if (lines[cur].trim() && lines[cur].search(/^\s*#.*$/) < 0) {
+        break;
+      }
+    }
+    // Remaining text is treated as a whole.
+    text = lines.slice(cur).join('\n');
+    var groups = text.match(/\s*"""([^]*?)\n\s*([^]*?)"""\s+([^]*)$/m)
+    if (!groups) {
+      return {title: "", description: "", code: ""};
+    }
 
-      // Redirect to the first page if none is specified.
-      if (!$location.path()) {
-        $location.path('/1').replace();
+    return {
+      title: groups[1].replace(/\\(["'])/g, '$1'),
+      description: groups[2].replace(/\\(["'])/g, '$1'),
+      code: groups[3].replace(/^(\s*)__doc__\s*=\s*/, '$1'),
+    };
+  };
+
+  var tutorialsPending = -1;
+
+  function loadTutorial(index, path) {
+    $http.get(path).
+      success(function(text) {
+        var parsed = $scope.parseTutorial(text);
+        $scope.tutorials[index] = {
+          name: name,
+          index: index,
+          title: parsed.title,
+          description: parsed.description,
+          code: parsed.code,
+        };
+        tutorialsPending--;
+      });
+  }
+
+  $http.get("tutorials/tutorials.json").
+    success(function(tutNames) {
+      $scope.tutorials = new Array(tutNames.length);
+      tutorialsPending = tutNames.length;
+
+      for (var i=0; i<tutNames.length; i++) {
+        loadTutorial(i, "tutorials/" + tutNames[i] + ".py");
       }
 
-      // Notice when the path changes and use that to
-      // navigate, but only after we actually have
-      // data.
-      $scope.$watch('location.path()', function(path) {
-        var newChapter = +path.replace(/^[/]/, '');
-        if (newChapter == 0) {
-          // Special value - don't go to chapter 0.
-          newChapter = $scope.chapter;
-          $scope.location.path("/" + $scope.chapter).replace();
+      // Triggered (below) when no more tutorials are pending.
+      var onTutorialsLoaded = function() {
+        $scope.tutorial = $scope.tutorials[$scope.chapter-1];
+        $scope.loadCode();
+
+        // Redirect to the first page if none is specified.
+        if (!$location.path()) {
+          $location.path('/1').replace();
         }
-        $scope.tocShowing = false;
-        if (newChapter != $scope.chapter) {
-          $scope.saveCode();
-          $scope.chapter = newChapter;
-          $scope.tutorial = $scope.tutorials[newChapter-1];
-          $scope.loadCode();
-          $scope.clearOutput();
-          $(document.body).scrollTop(0);
+
+        // Notice when the path changes and use that to
+        // navigate, but only after we actually have
+        // data.
+        $scope.$watch('location.path()', function(path) {
+          var newChapter = +path.replace(/^[/]/, '');
+          if (newChapter == 0) {
+            // Special value - don't go to chapter 0.
+            newChapter = $scope.chapter;
+            $scope.location.path("/" + $scope.chapter).replace();
+          }
+          $scope.tocShowing = false;
+          if (newChapter != $scope.chapter) {
+            $scope.saveCode();
+            $scope.chapter = newChapter;
+            $scope.tutorial = $scope.tutorials[newChapter-1];
+            $scope.loadCode();
+            $scope.clearOutput();
+            $(document.body).scrollTop(0);
+          }
+        });
+      };
+
+      // Finally, we wait until tutorialsPending is zero.
+      var checkPending = function() {
+        if (tutorialsPending > 0) {
+          window.setTimeout(checkPending, 1);
+        } else {
+          onTutorialsLoaded();
         }
-      });
+      };
+      window.setTimeout(checkPending, 1);
     });
 
   // Set up a handy timer that watches when _time changes and starts a new
