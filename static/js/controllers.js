@@ -107,7 +107,8 @@ function CodeCtrl($scope, $http, $location, $timeout) {
 
   var tutorialsPending = -1;
 
-  function loadTutorial(index, path) {
+  function loadTutorial(index, name) {
+    var path = "tutorials/" + name + ".py"
     $http.get(path).
       success(function(text) {
         var parsed = $scope.parseTutorial(text);
@@ -128,7 +129,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       tutorialsPending = tutNames.length;
 
       for (var i=0; i<tutNames.length; i++) {
-        loadTutorial(i, "tutorials/" + tutNames[i] + ".py");
+        loadTutorial(i, tutNames[i]);
       }
 
       // Triggered (below) when no more tutorials are pending.
@@ -233,8 +234,8 @@ function CodeCtrl($scope, $http, $location, $timeout) {
         return;
       }
       $scope.clearOutput();
-      try {
-        vm.loadModuleData("contextlib").then(function() {
+      vm.loadModuleData("contextlib").then(function() {
+        try {
           // Clean up the global namespace, get the help function, and create a doctest.
           vm.execfile("../../../../../_preamble.py").then(function() {
             return vm.exec(code).catch(function(err) {
@@ -242,11 +243,11 @@ function CodeCtrl($scope, $http, $location, $timeout) {
               $scope.addErrorText(err.trace);
             });
           });
-        });
-      } catch (err) {
-        console.log(err);
-        $scope.addErrorText("Internal Error: " + $scope.prettyError(err));
-      }
+        } catch (err) {
+          console.log(err);
+          $scope.addErrorText("Internal Error: " + $scope.prettyError(err));
+        }
+      });
     };
   }
 
