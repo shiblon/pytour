@@ -100,6 +100,33 @@ html, body {
   border-bottom-right-radius: 8px;
   background: white;
 }
+#output.hidden {
+  background-color: #ddd;
+}
+#output-spinner {
+  display: none;
+}
+#output-spinner.on {
+  display: block;
+  margin: auto;
+  margin-top: 5px;
+}
+div#first-run {
+  display: none;
+  margin: 10px;
+  text-align: center;
+}
+div#first-run.showing {
+  display: block;
+}
+div#vm-loading {
+  display: none;
+  margin: 10px;
+  text-align: center;
+}
+div#vm-loading.showing {
+  display: block;
+}
 .CodeMirror {
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;

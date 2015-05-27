@@ -61,7 +61,7 @@
 <div id="workspace" ng-class="{'fill': contentCollapsed}">
   <div id="workspace_actions" class="actions" ng-class="{'expanded': isExpanded}">
     <div>
-      <a id="run" class="button" ng-class="{'hidden': !vmLoaded, 'running': codeRunning}" ng-click="runCode(code)" ng-bind-html="vmLoaded | iif : 'RUN' : '......'"></a><a id="more" class="button" ng-click="isExpanded = !isExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
+      <a id="run" class="button" ng-class="{'hidden': !vmLoaded || codeRunning}" ng-click="runCode(code)">RUN</a><a id="more" class="button" ng-click="isExpanded = !isExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
     </div>
     <ul ng-click="isExpanded=false" class="more">
       <li ng-click="clearOutput()">Clear Output Window</li>
@@ -75,9 +75,10 @@
     <textarea name="codetext" ui-codemirror="{lineNumbers: true, theme: 'neat', indentWithTabs: false, tabSize: 2, indentUnit: 2, extraKeys: {Tab: 'indentMore', 'Shift-Enter': doNothing } }" ng-model="code"></textarea>
   </div>
   <div id="workspace_bottom">
-    <div id="output">
-      <pre class="stdout">{{out}}</pre>
-      <pre class="stderr">{{err}}</pre>
+    <div id="output" ng-class="{'hidden': !vmLoaded || codeRunning}" name="output">
+      <img id="output-spinner" src="img/spinner.gif" ng-class="{'on': !vmLoaded || codeRunning}">
+      <div ng-class="{'showing': firstRun && codeRunning}" id="first-run">Running for the first time. This will take a few seconds.</div>
+      <div ng-class="{'showing': !vmLoaded}" id="vm-loading">Loading Python</div>
     </div>
   </div>
 </div>
@@ -90,17 +91,17 @@
     import sys
     import contextlib
     import StringIO
-    
+
     class _testmod(object):
       sys = sys
       StringIO = StringIO
-    
+
       def __init__(self):
         self.failed = 0
         self.succeeded = 0
         for s in self.__find_docstrings():
           self.__test_doc_string(s)
-    
+
       def __parse_doc_string(self, s):
         # States:
         #   None (found &gt;&gt;&gt;) -&gt; Command [add to collected command
@@ -114,16 +115,16 @@
         #   Result (default) -&gt; Result [add to collected result]
         class Result: pass
         class Command: pass
-    
+
         # Look for instances of &gt;&gt;&gt; and find the text that follows (allowing ellipses).
         state = None
-    
+
         commands = []
         results = []
         indentation = None
         collected_result = []
         collected_command = []
-    
+
         lines = s.split('\n')
         # Add a blank at the end to make states simpler.
         for line in lines + ['']:
@@ -172,11 +173,11 @@
               if not line.startswith(indentation):
                 raise ValueError("invalid result indentation: %r" % line)
               collected_result.append(ls.rstrip('\r\n'))
-    
+
         if len(commands) != len(results):
           raise ValueError("invalid doctest - different number of commands from results:\n%r\n%r" % (
             commands, results))
-    
+
         tests = []
         for c, r in zip(commands, results):
           # See if more than one instance of ellipses made it into any result.
@@ -185,9 +186,9 @@
             if numellipses &gt; 1:
               raise ValueError("too many ellipsis lines in result %v", r)
           tests.append({'command': c, 'results': r})
-    
+
         return tests
-    
+
       @contextlib.contextmanager
       def __redirect_stdio(self):
         out = self.StringIO.StringIO()
@@ -198,7 +199,7 @@
           yield out, err
         finally:
           self.sys.stdout, self.sys.stderr = old_out, old_err
-    
+
       def __run_test(self, test, environ={}):
         command = test['command']
         expected = test['results']
@@ -212,10 +213,10 @@
             except Exception, e:
               print e
             result = out.getvalue() + err.getvalue()
-    
+
         if expected is None:
           return True
-    
+
         if result is None and expected is not None:
           print "Failed example:"
           print "\t%s" % command
@@ -224,22 +225,22 @@
             print "\t%s" % line
           print "Got None"
           return False
-    
+
         # Now that we have tested for None, we can turn it into a string.
         result = repr(result)
         if result.endswith('\n'):
           result = result[:-1]
-    
+
         result = result.split('\n')
-    
+
         expanded_expected = expected
         if len(result) &gt; len(expected) and '...' in expected:
           # Search for ellipses, and expand them to make matching easier.
           loc = expected.index('...')
           expanded_expected = expected[:loc] + ['...'] * (len(result) - loc - 1) + expected[loc+1:]
-    
+
         failed = True
-    
+
         if len(result) != len(expanded_expected):
           if len(result) == 0:
             print "Failed example:"
@@ -278,35 +279,35 @@
               break
           else:
             failed = False
-    
+
         return not failed
-    
+
       def __test_doc_string(self, s):
         tests = self.__parse_doc_string(s)
         environ = globals().copy()
-    
+
         for t in tests:
           if self.__run_test(t, environ):
             self.succeeded += 1
           else:
             self.failed += 1
             print
-    
+
       def __find_docstrings(self, vardict=None):
         if vardict is None:
           vardict = globals()
-    
+
         if '__doc__' in vardict:
           yield vardict['__doc__']
-    
+
         for val in vardict.itervalues():
           if hasattr(val, '__doc__') and val.__doc__:
             yield val.__doc__
-    
+
           if type(val) in ('type', 'classobj'):
             for d in self.__find_docstrings(val.__dict__):
               yield d
-    
+
     # Clean up the namespace, make sure that help and _testmod make it where they belong.
     from pydoc import help
     __builtins__.__dict__['help'] = help
@@ -322,145 +323,145 @@
   </div>
   <div name="hello">
     """Hello, Python!
-    
+
     Welcome to Python, a very fun language to use and
     learn!
-    
+
     Here we have a simple "Hello World!" program. All
     you have to do is print, and you have output. Try
     running it now, either by clicking *Run*, or
     pressing *Shift-Enter*.
-    
+
     Python starts at the top of your program and does
     what you tell it to until it reaches the bottom.
     Here, we have told it to **print** a **string**
     (text surrounded by quotation marks) to the output
     window, and it has.
-    
+
     Once you've tried out some exercises, navigate to
     other slides using the navigation arrows or
     the *Page-Up* and *Page-Down* keys.
-    
+
     Exercises
-    
+
     - Try removing each of the quotation marks in
       turn. What happens?
-    
+
     - Change the string to say hello specifically to you.
-    
+
     - Print 'Hello, Python!' using two strings instead
       of one, like this: |print 'Hello', 'Python!'|.
       What did |print| do for you automatically?
     """
-    
+
     print 'Hello, Python!'
   </div>
   <div name="comments">
     """Comments
-    
+
     Python ignores **comments**: bits of text that
     start with |#| and extend to the end of the line.
     They are strictly for humans to read, and do not
     affect how your program runs.
-    
+
       # This is a comment.
-    
+
     Comments are useful for making notes to yourself
     or others about how the program's code works, but
     should not be used as the primary form of
     documentation in Python (more on that later).
-    
+
     Note that the leader |#| has to stand alone
     syntactically to form a comment; if it appears
     inside of a string, for example, it is just part
     of the text.
-    
+
     Exercises
-    
+
     - Print a string with a comment leader inside of
       it, e.g., |print "# a comment?"|.
     """
-    
+
     # This is a comment. Comments start with '#' and
     # extend to the end of the current line.
-    
+
     print "hey"
     print # This just prints a blank line.
     print "hello"
   </div>
   <div name="variables">
     """Variables
-    
+
     A **variable** is a place to remember something.
     You assign a value to a variable using the
     **assignment operator** (a single |=|) like this:
-    
+
       a = "hi"
-    
+
     Now the variable |a| contains the string |"hi"|.
-    
+
     In Python, variables spring into existence when they
     are _assigned a value_. They do not exist before being
     assigned, so accessing one without first assigning it
     is an error.
-    
+
     A valid **variable name** can contain letters,
     numbers, and the |_| character, but cannot begin
     with a number. A variable can contain any kind of
     value.
-    
+
     Exercises
-    
+
     - Try assiging to a variable name that starts with a number
       (like 1eet). See what happens.
-    
+
     - Assign a new variable to an existing one, e.g.,
       |b = a|. Print it.
     """
-    
+
     a = "hi there"  # 'a' now contains a string of text.
     print a
-    
+
     a = 10  # 'a' now contains an integer number.
     print a
-    
+
     my_longer_varname = 14
     print my_longer_varname
-    
+
     # Until assigned, variables cannot be accessed.
     print i_dont_exist  # Not yet assigned!
   </div>
   <div name="strings">
     """Strings
-    
+
     Strings basically contain text.  They are
     delimited, as was seen in the "Hello" example,
     with quote marks.
-    
+
     There are four fundamental quote styles:
-    
+
       "Double-quotes"
-    
+
       'Single-quotes'
-    
+
       ""\"Three double quotes make
       multi-line strings.""\"
-    
+
       '''Three single quotes
       work the same way.'''
-    
+
     Exercises
-    
+
     - Run the program and note the indentation
       problem. Fix it.
     """
-    
+
     __doc__ = """Multi-line Strings
-    
+
     Such strings are often used to write documentation
     for modules, functions, and classes.
     """
-    
+
     print 'Single-quoted string.'  # single quotes work
     print "Double-quoted string."  # double quotes, too
     print '''Multi-line strings may not do what you think,
@@ -468,126 +469,126 @@
   </div>
   <div name="module_docstrings">
     """Module Docstrings
-    
+
     If the first statement in a file is a string,
     Python uses it as documentation. This is called a
     **docstring**.
-    
+
     Since documentation usually takes up more than one
     line of text, these use the triple-quoting format
     discussed earlier.
-    
+
     These strings are available to your program, but
     more importantly, they can be used to produce
     human-readable documentation for everything you
     do. We'll make use of them throughout the rest of
     the tutorial.
-    
+
     Exercises
-    
+
     - Try printing the special variable |__doc__|.
     """
-    
+
     __doc__ = """This is a module docstring.
-    
+
     A module is basically a file. All of the code in this
     editor makes up a single module, a module that you
     define by typing Python statements.
     """
-    
+
     print "This is a module - where's the documentation?"
   </div>
   <div name="string_escaping">
     """String Escaping
-    
+
     There is no difference between |'| and |"| - they both form
     equivalent strings. People usually pick one based on preference,
     changing only to include quotes inside, like this:
-    
+
       "Don't touch my quoting."
       'I need to "work", now.'
-    
+
     Occasionally, you need to include both kinds of
     quotes inside of a string. In these cases, you can
     **escape** quotes using a backslash:
-    
+
       "This string contains the \\" delimiter."
-    
+
     Strings accept other escape sequences, like |'\\n'|, which inserts
     a line feed character, making a new line. More
     info can be found here:
-    
+
     http://docs.python.org/2/reference/lexical_analysis.html#string-literals
-    
+
     Exercises
-    
+
     - Try creating a string that contains a backslash:
       it will need to be escaped.
     """
-    
+
     __doc__ = """A demonstration of escape sequences.
-    
+
     This multi-line string is delimited with triple
     ""\", and tells you that by escaping at least one
     of them (otherwise the string would end early).
     """
-    
+
     print "This has a double quote \" inside."
-    
+
     print 'This has a single quote \' inside.'
-    
+
     print "This has a second line:\n  And this is it."
-    
+
     print
     print __doc__ # Where is the backslash?
   </div>
   <div name="calling_functions">
     """Calling Functions
-    
+
     Python has a lot of stuff built in that you can
     just use. Much of it is exposed through **function
     calls**.
-    
+
     A function is called by placing |()| after its
     name. If it accepts **arguments**, then they go
     inside of the |()|. The |len| function
     demonstrated here accepts a single argument: the
     thing you want to know the length of.
-    
+
     All Python functions **return a value**. In the
     case of |len|, this means that calling it produces
     a new value. You can assign that value to a
     variable, or print it, or pass it into another
     function. Or, you can ignore it and it will go
     away.
-    
+
     Exercises
-    
+
     - One important function in Python is |repr|,
       which prints a "representation" of an object.
       Try printing |repr("10")|. See how it differs
       from |repr(10)|.
-    
+
     - Convert the string |"2000"| into an integer
       by calling |int|.
     """
-    
+
     __doc__ = """Calling Functions
-    
+
     Note: If you don't use a return value,
     it gets lost.
     """
-    
+
     # Call 'len', ignore (and lose) its value.
     len("hi")
-    
+
     # Assign 'length' to the return value of 'len'.
     length = len("how long is this anyway?")
     print "length =", length
-    
+
     # We can print it directly, too.
     print "The length is", len("hi there")
-    
+
     # The repr function can be useful to see what's
     # really in a string. It adds quotes for you.
     print "Just print:", "Hi there"
@@ -595,16 +596,16 @@
   </div>
   <div name="numbers">
     """Numbers
-    
+
     There are several numeric types built into Python,
     including integers (types |int| and |long|),
     floating point numbers (type |float|), and complex
     numbers (type |complex|).
-    
+
       10        # This is an 'int'
       10.5      # This is a 'float'
       6 + 3.2j  # This is a 'complex'
-    
+
     The interactive Python interpreter makes a nice
     calculator, and unlike this tutorial, you don't
     even have to type |print| there - the |repr| of
@@ -613,29 +614,29 @@
     multiplication, division, and exponentiation,
     among other things.  Parentheses do what you would
     expect.
-    
+
     Exercises
-    
+
     - Print the number of atoms in the
       sun, as a large integer: |119 * 10 ** 55|.
-    
+
     Bonus Work
-    
+
     - Try opening an interactive Python prompt (in a
       terminal, not here) and using it as a
       calculator.
-    
+
     """
-    
+
     # Basic numeric types.
     print "I'm an int:", 10
     print "I'm a float:", 2.79
     print "I'm complex:", 3.14 + 1j
-    
+
     # Math is easy.
-    
+
     a = 1000.0
-    
+
     # Some basic math operators:
     print
     print "Basic Math Operators:"
@@ -644,7 +645,7 @@
     print "Add:", a + 12    # Add 12
     print "Sub:", a - 15    # Subtract 15
     print "Exp:", a ** 5    # Take a to the 5th power.
-    
+
     # Grouping:
     print
     print "Parentheses:"
@@ -653,16 +654,16 @@
   </div>
   <div name="math_module">
     """Math, Modules, and Namespaces
-    
+
     We know how to do basic things like addition and
     multiplication, but how do we get at more
     interesting things like sines and cosines?
-    
+
     Python comes with "batteries included", which means you
     can get a lot of functionality with just the basic
     installation. But that functionality is not all
     available unless you ask for it by **importing modules**.
-    
+
     Here we import |math| and start to use some of the
     things inside of it. Note how we use the |.|
     operator to access things _inside_ of the |math|
@@ -670,169 +671,169 @@
     in Python (something that contains other named
     things); a module is just one of several kinds of
     namespaces.
-    
+
     Exercises
-    
+
     - The |dir| function gives you a _directory_ of a
       namespace. Print |dir(math)| and see what you
       can find in there.
-    
+
     - Compute |math.sin(math.pi)|. Did it give you the
       answer you expected? How close was it? (Hint:
       |1e-3| is |0.001|).
     """
-    
+
     __doc__ = """Importing Modules, Doing Math"""
-    
+
     import math
-    
+
     # My favorite constants.
     print math.pi
     print math.e
-    
+
     # Another important one (a square root).
     print math.sqrt(2)
   </div>
   <div name="from_import">
     """More on Importing
-    
+
     Some of the functionality you want in Python may
     only be available via **packages**, which are
     containers for modules. Or, you may just not want
     to type the |.| all the time. For example, you may
     want to access |math.pi| a lot, but that is a lot
     of typing for a short and common symbol.
-    
+
     When importing, you can choose which pieces you
     want imported using the |from ... import ...| syntax:
-    
+
       from math import pi, e
-    
+
     This imports the symbols |pi| and |e| from the
     |math| module into the current **global
     namespace** so you can just use them without extra
     typing.
-    
+
     You can also use |*| in place of a name, which
     imports everyting the module knows about. *You
     should rarely, if ever do this*, but when you
     need it, it's there for you.
     """
-    
+
     __doc__ = """From ... import ...
-    
+
     To import just one thing from a module or package,
     see below.
     """
-    
+
     from math import pi, e
-    
+
     print "I know the digits of 'pi' just fine:", pi
     print
     print "Another beautiful, naturally occurring number:", e
   </div>
   <div name="help">
     """Getting Help
-    
+
     One function that is built into the interactive
     Python interpreter is |help|. This is a very
     useful function, because it gives you basic
     documentation on just about anything you want.
-    
+
     For this in-browser tutorial, the *help* function
     is included, just to give you a feel for what it
     does.
-    
+
     You can also run "pydoc" from the commandline, or
     access http://python.org/doc/ directly or from the
     link above.
-    
+
     Exercises
-    
+
     - Go to the *Docs* link, find Python 2.x, Library
       Reference, and click on
       |Built-in Functions| (direct link here: https://docs.python.org/2/library/functions.html).
-    
+
     - Print |help(int)|. Did it output what you expected?
-    
+
     - Import |math| and run |help| on the module.
       Compare with |dir|.
     """
-    
+
     __doc__ = """Getting Help
-    
+
     Help is available by calling the 'help' function.
     It can sometimes be more useful than 'dir'.
     """
-    
+
     print "Help for 'len'"
     help(len)
-    
+
     print "Help for symbols"
     help('symbols')
-    
+
     print "Help for keywords"
     help('keywords')
   </div>
   <div name="basic_conversions">
     """Basic Conversions
-    
+
     We have talked about strings and numbers, and alluded a
     bit to the fact that we can convert between them.
-    
+
     You can convert between things like numbers and
     strings using the appropriate calls, like
     |int("200")| or |str(1.1 ** 24)|.
-    
+
     There are a number of these **callables** (things
     you can _call_, like functions, using |()|) that
     convert between different types. A few are listed
     here (there are many more):
-    
+
       int       float
       complex   str
       list      tuple
-    
+
     Exercises
-    
+
     - Print the result of |5 * 30|.
-    
+
     - Now try it as |str(5) * 30|. What happened?
-    
+
     - What about |"5" * "30"|?
-    
+
     - You can provide a *numeric base* to |int|. Try printing
       |int("FACE", 16)|. This treats |FACE| as a
       hexadecimal value.
     """
-    
+
     # I have a string, but I want a number!
     num_str = "  178000 "
-    
+
     # Yup, it's a string:
     print repr(num_str)
-    
+
     # Can it be an int?
     print int(num_str)  # spaces are stripped first.
-    
+
     # How about a float?
     print float(num_str)
-    
+
     # Of course, converting between numbers works:
     print float(10)
-    
+
     # But what happens with this?
     print int(10.5)
-    
+
     # We can even make complex values from strings:
     print complex("-2+3.2j")
-    
+
     # This won't work:
     print int("234notanumber")
   </div>
   <div name="equality_operators">
     """Equality
-    
+
     Things are **equal** to each other if they have the
     _same values_. In Python, testing for equality is
     done using the |==| operator, and inequality is
@@ -840,7 +841,7 @@
     "10"| (one is an integer, the other is a string),
     but |10 == 5 + 5| (both sides are integers with
     the same value).
-    
+
     With variables, things get a little bit more
     interesting. Suppose you have two index cards,
     each with the number |5| on them. Each card is a
@@ -848,311 +849,311 @@
     _value_. Because they have the same values, they
     are **equal** in the |==| sense: they contain the
     same data. But they are not the same card.
-    
+
     Now suppose I write "5" on one card, show it to
     you, and say "This is |a|".  Then I show you _the
     same card again_, but say, "This is |b|". In this
     case, |a| and |b| are equal in the |is| sense:
     they are not only equal (|a == b|), they are also referring
     to the same card (|a is b|).
-    
+
     This normally does not matter much, but you will
     use it when testing for Python's special "nothing"
     value called |None|.
-    
+
     Exercises
-    
+
     - There are other comparison operators, and they
       do what you'd expect, even on strings and other
       sequences. Experiment with |&lt;|, |&lt;=|, |&gt;|, and
       |&gt;=| - see what happens when you print something
       like |5 &lt; 7| or |'hello' &gt;= 'hello there'|.
     """
-    
+
     print "Strings are not equal to integers."
     print "10" != 10   # True
     print 10 == 5 + 5  # True
-    
+
     print "Variable assignment satisfies 'is'"
     a = 1543
     b = a
-    
+
     print a == b    # Obviously true - same data.
     print a != a+1  # Indeed.
     print a is b    # Also true. Assignment satisfies 'is'.
-    
+
     # Performing an operation on data like integers or
     # strings produces a *new thing*, even if the data is
     # the same.
     print "Same data, not same thingy."
     b = a + 0
-    
+
     print a == b    # Still true.
     print a is b    # No longer true!
-    
+
     print "not None:", a is not None  # A very common kind of test.
     c = None
     print c is not None  # False
   </div>
   <div name="tuples">
     """Tuples
-    
+
     You have already seen one kind of sequence: the
     string. Strings are a sequence of one-character
     strings - they're strings all the way down.  They
     are also **immutable**: once you have defined one,
     it can never change.
-    
+
     Another immutable seqeunce type in Python is the
     **tuple**. You define a tuple by separating values
     by commas, thus:
-    
+
       10, 20, 30  # This is a 3-element tuple.
-    
+
     They are usually set apart with parentheses, e.g.,
     |(10, 20, 30)|, though these are not always
     required (the empty tuple |()|, however, does
     require parentheses). It's usually best to just
     use them.
-    
+
     Tuples, as is true of every other Python sequence,
     support **indexing**, accessing a single element
     with the |[]| notation:
-    
+
       print my_tuple[10]  # Get element 10.
-    
+
     Exercises
-    
+
     - Create a one-element tuple and print it out,
       e.g., |a = 4,| (the trailing comma is required).
-    
+
     - Try comparing two tuples to each other using
       standard comparison operators, like |&lt;| or |&gt;=|.
       How does the comparison work?
     """
-    
+
     # A basic tuple.
     a = 1, 3, 'hey', 2
     print a
-    
+
     # Usually you see them with parentheses:
     b = (1, 3, 'hey', 2)
     print b
     print "b has", len(b), "elements"
-    
+
     # Indexing is easy:
     print "first element", b[0]
     print "third element", b[2]
-    
+
     # Even from the right side (the 'back'):
     print "last element", b[-1]
     print "penultimate", b[-2]
-    
+
     # Parentheses are always required for the empty
     # tuple:
     print "empty", ()
-    
+
     # And single-element tuples have to have a comma:
     print "singleton", (5,)  # A tuple
     print "not a tuple", (5)   # A number
-    
+
     # They are immutable, though: you can't change
     # them.
     b[1] = 'new value'  # oops
   </div>
   <div name="lists">
     """Lists
-    
+
     Like tuples, **lists** are sequences of any kind
     of value, but unlike tuples, they are **mutable**:
     they can change contents and size after being
     created. To create a list, use |[]|:
-    
+
       [1, 2, 3, 4]  # A 4-element list.
       []            # An empty list.
-    
+
     They are indexed in exactly the same way as any
     other sequence in Python, via the |[]| notation,
     but because they are mutable, you can *change
     their size* and *assign values to their
     elements*:
-    
+
       a = [1, 3, 5, 7]
       a[1] = 'hello'  # This works.
-    
+
     Lists have lots of **methods** (functions in their
     namespace that you can use to manipulate them),
     like |append|:
-    
+
       a.append(9)  # Add 9 to the end of a.
-    
+
     Exercises
-    
+
     - See the code for examples of how to use lists.
       Play with it a bit.
-    
+
     - Use the |str.join| function to join a list of
       strings together. For example, what does
       |'\\n'.join(["hi", "there"])| do? Try different
       **delimiter strings** (in place of |'\\n'|).
     """
-    
+
     # Create a list using [] notation.
     a = [7, 3, 1, 9]
     print a
     print "a has", len(a), "elements"
-    
+
     # Indexing works as expected.
     print "third element", a[2]
     print "last element", a[-1]
-    
+
     # List are mutable:
     a[3] = "hello"    # Change element 3.
     print a
-    
+
     # And you can add to them. There are lots more of these
     # operations - see help(list).
     a.append("new value")
     print a
-    
+
     # Sorting is one of those really useful list things:
     a.sort()
     print a
-    
+
     # Extending is another:
     a.extend(['more', 'values'])
     print a
   </div>
   <div name="slicing">
     """Slicing
-    
+
     You can get or set the individual elements of a
     sequence by using |[]| to index into it. But this
     is just a special case of **slicing**.
-    
+
     Slicing allows you to specify a _range_ of
     elements in a sequence, even for assignment where
     the underlying sequence is mutable.
-    
+
     The most basic slice is |[start:end]| where
     |start| is *inclusive*, and |end| is *exclusive*:
     |[2:6]| takes everything starting at element |2|,
     up to *but not including* element |6|.
-    
+
     There is an extended syntax with two colons, as
     well: |[start:end:step]| means you want to take
     everything in [start,end), but you only want every
     step-th element.
-    
+
     As a quick note, the |range| function can be used
     to quickly produce a list of numbers, and its
     arguments are similar to those of slices.
-    
+
     Exercises
-    
+
     - Try the |range| function with 1, 2, or 3
       arguments.  See what it does.
-    
+
     - Try reversing a list using slice notation (Hint:
       copy the list with a negative step count).
-    
+
     - Try taking every third element of the reversed
       list.
-    
+
     """
     # The range(10) function produces all numbers in [0,10)
     # (like slices, the right endpoint is excluded).
     numbers = range(10)
     print numbers
-    
+
     # A simple slice.
     print "3:8", numbers[3:8]
-    
+
     # A slice containing one element.
     print "2:3", numbers[2:3]  # just one element
-    
+
     # But it's really useful because you can assign to
     # it.
     numbers[2:3] = [11, 12, 13, 14]
     print numbers
-    
+
     # Even an empty slice is useful for assignment:
     a = [1, 2, 5, 6]
     a[2:2] = [3, 4]
     print "Assigned to empty slice and got", a
-    
+
     # If you omit one of the slice numbers, it defaults to
     # the corresponding endpoint. Negative values work,
     # too.
     print "from the beginning to 4", numbers[:4]
     print "all but the last two", numbers[:-2]
     print "from 3 to the end", numbers[3:]
-    
+
     print "everything - a complete copy", numbers[:]
-    
+
     print "every other element", numbers[::2]
   </div>
   <div name="dictionaries">
     """Dictionaries
-    
+
     Sequences are very useful, but they just hold
     collections of stuff. Also, they're typically all
     about order (|set| being an obvious exception).
-    
+
     **Dictionaries** (type |dict|), on the other hand, give
     a name to every piece of data within them. That
     name can be a string, or a number, or even a tuple
     (with the "hashable" caveat, but that's a
     different discussion).  The name is called a
     "key".
-    
+
     Dictionaries are typically created with with |{}|
     notation, with each element being a |key: value| pair.
     You can also create a dictionary by calling |dict|.
-    
+
     To access an element of a dictionary, use the |[]|
     indexing notation, but instead of a number, give it a
     key. Note that slices are meaningless for dictionaries,
     and therefore are not supported.
-    
+
     Unlike |list| and |tuple|, when iterating over or
     otherwise outputting a dictionary, order is
     _undefined_ and _unreliable_. Don't count on order.
-    
+
     Exercises
-    
+
     - There is a lot of content in the code - read
       through it and see if you can guess what it will
       output before running it.
     """
-    
+
     number_of_children = {"John": 6,
                           "Mary": 2}  # Empty is also allowed.
     print "After initialization:", number_of_children
     print "John has", number_of_children["John"], "children"
-    
+
     # You can also create new items with index assignment:
     number_of_children["George"] = 12
     print "Added George:", number_of_children
     print
-    
+
     # There are many useful methods in dictionaries.
     print number_of_children.keys()   # list of keys
     print number_of_children.values() # list of values
     print number_of_children.items()  # list of key,value pairs
     print
-    
+
     # The 'in' operator always applies to the keys,
     # never the values.
     print "George" in number_of_children # True
     print "Simon" in number_of_children  # False
     print
-    
+
     # Using the dict type to create a dictionary:
     d1 = dict()
     d1["key1"] = "value1"
     print d1
-    
+
     # You can also create a dictionary from a sequence
     # of key/value pairs using the dict callable type:
     d2 = dict([("K1", "v1"), ("K2", "V2")])
@@ -1160,53 +1161,53 @@
   </div>
   <div name="if_elif_else">
     """'If' Statements
-    
+
     So far we have been computing things and printing
     the results. But this is very inflexible. We want
     our data to change _behavior_, not just output.
-    
+
     To do that, we use the |if| statement.
-    
+
     The syntax is shown in the example code. The essential
     point is that whatever comes between |if| and |:| is an
     expression that must evaluate to |True| or |False|.
-    
+
     A True result will cause the entire **indented
     block** of code to execute. Otherwise it is
     skipped.  If an |else| block is present, it is
     executed when the condition is |False|.
-    
+
     Importantly, code blocks are *always* defined by
     indentation in Python. Because of this, the
     special |pass| keyword is used to mean "do
     nothing" where a block is otherwise expected.
-    
+
     Exercises
-    
+
     - Try making the |else| clause execute by changing
       |a| and |b|.
-    
+
     - Add an |elif a == b:| block between |if| and |else|.
       What does it do?
-    
+
     - Move the |print| statement for the string test
       into an |else| clause, and make the |if| clause
       empty using the |pass| keyword as its body. What
       happens?
     """
-    
+
     if "George" &lt; "Mary":
       print "Alphabetic sorting works!"
       print "And we can say more if we want, too!"
-    
+
     if 0 == 1:
       print "Math is busted."
     print "This unindented code always runs"
     print "because it is not in the 'if' block."
-    
+
     a = 5
     b = 10
-    
+
     if a &gt; b:
       pass  # Do nothing.
     else:
@@ -1214,78 +1215,78 @@
   </div>
   <div name="nonzero">
     """A Tale of Truth
-    
+
     The |if| statement executes its code block when
     its **condition is True**. This is a nice, simple
     rule, but it's actually a lie. Really, it executes
     if its condition is **nonzero**.
-    
+
     In a nutshell, a value is "nonzero" if it is
     _something_ instead of _nothing_. The special
     "nothing" value |None|, for example, always
     evaluates to |False|. Some more examples follow:
-    
+
       False      True
       ------------------------
       0          -5
       []         ['x', 1, ...]
       ()         (4, 2, ...)
       ''         'hi'
-    
+
     Typically, there is only one way for a thing to be
     |False| ("zero"), and anything else is |True|
     ("nonzero").
-    
+
     Exercises
-    
+
     - |True| and |False| are called "Boolean" types,
       after mathematician George Boole. Try calling
       the |bool| builtin to find out whether something
       evaluates to |True| or |False|. For example, try
       |print bool(0.0)| or a tiny value like |print
       bool(1e-20)|.
-    
+
     - Try evaluating |bool('0')|. Is it what you
       expected? Why?
     """
-    
+
     empty_list = []
     empty_string = ""
-    
+
     if not empty_list:
       print "Yep, the list is empty"
-    
+
     if empty_string:
       print "The string has values"
-    
+
     if [0]:
       print "The list is not empty"
   </div>
   <div name="functions">
     """Functions
-    
+
     We know how to call **functions** like |len| and
     |bool| to get information about stuff, so now
     we're going to learn how to write our own.
-    
+
     Functions are _defined_ using the |def| statement.
     They have a name, a list of argument names in
     parentheses, a colon, and are always followed by
     an indented code block.
-    
+
     To **return** a value (or values) from a function,
     you use the |return| statement. It can return any
     kind of value, including tuples, which are
     commonly used to return multiple values.
-    
+
     When |return| executes, the function terminates
     immediately.
-    
+
     Exercises
-    
+
     - Put a |print| statement into the |swapped| function.
       Call it without assigning its result to anything.
-    
+
     - Change the |ordered| function to use |else|
       instead of relying on the early exit behavior of
       |return|.
@@ -1296,7 +1297,7 @@
     #
     def swapped(a, b):
       return b, a
-    
+
     # This one returns the arguments in order.
     # Note how it uses the fact that "return" exits
     # immediately to get its logic right.
@@ -1305,24 +1306,24 @@
       if a &gt; b:
         return b, a
       return a, b
-    
+
     print "swapping", swapped(10, 20)
     print "swapping", swapped('hello', 'aardvark')
-    
+
     print "ordering", ordered('more', 'less')
     print "ordering", ordered((1,3,5), (1,2))
-    
+
     # When passing tuples *out* of a function, you can
     # "unpack" them into new variables in one step.
     x, y = swapped(1, 2)
     print "unpacked", x, y
-    
+
     # Wait, why doesn't this work?
     print "ordered, swapped", ordered(swapped(1, 2))
   </div>
   <div name="sending_starargs">
     """Argument Unpacking
-    
+
     We saw when creating our own function that chaining
     simple tuple-returning functions didn't work as
     expected. Taking |ordered(swapped(...))| just doesn't
@@ -1330,75 +1331,75 @@
     |ordered| expects _two arguments_. To make the
     call, you have to first unpack the result then
     send its values separately.
-    
+
     You can do this with an **unpacking assignment**, like this:
-    
+
       x, y = swapped(3, 6)
       print ordered(x, y)
-    
+
     Fortunately, there is another less cumbersome way
     to do it that is more convenient. If you prefix
     the argument with |*|, Python will unpack the
     value into function arguments in one step:
-    
+
       print ordered(*swapped(3, 6))
-    
+
     Exercises
-    
+
     - Try calling |ordered(*(3, 2, 1))|. What happens?
       Why?
     """
-    
+
     def swapped(a, b):
       return b, a
-    
+
     def ordered(a, b):
       if a &gt; b:
         return b, a
       return a, b
-    
+
     # You can always do this via unpacking assignment:
     x, y = swapped("hi", "there")
     print ordered(x, y)
-    
+
     # But this is easier.
     print ordered(*swapped(1, 5))
-    
+
     print swapped(*ordered(4, 2))
   </div>
   <div name="receiving_starargs">
     """Argument Packing
-    
+
     You can _unpack_ sequences into arguments when you
     call functions, e.g., |ordered(*(3, 1))|, but you
     can _also_ define functions to accept **packed
     arguments** in a tuple.
-    
+
     Take a look at |star_ordered| and |star_mixed|,
     for example. Here we use the |*| notation to
     indicate that we want to receive all of the
     unnamed arguments as a tuple.
-    
+
     When you accept |*args| (or |*whatever|), you can
     place it at the end of a regular argument list, as
     shown in the accompanying |mixed_args|. It cannot
     be followed by regular arguments.
-    
+
     Exercises
-    
+
     - Try calling |star_ordered| with more than 2 arguments.
       What happens?
-    
+
     - The builtin |min| function returns either the
       smallest of its arguments or the smallest item
       in a sequence, depending on how it is called.
       Implement your own |myMax| function that works
       similarly, but returns the largest item.
-    
+
     - Play around with |sorted|. See what happens when
       you pass it a string, or a tuple, or a list.
     """
-    
+
     # Here, '*args' means "take all arguments and
     # stick them into the 'args' tuple in order".
     #
@@ -1407,21 +1408,21 @@
     #
     def star_ordered(*args):
       return sorted(args)
-    
+
     print "ordered:", star_ordered(6, 3)
-    
+
     # You can mix regular and star parameters, if the
     # star ones come last.
     #
     def star_mixed(a, b, *others):
       print a, b, others
-    
+
     # Note how the arguments are printed.
     star_mixed("hi", "there,", "what's", "your", "name?")
   </div>
   <div name="default_args">
     """Named and Default Arguments
-    
+
     Functions (or any callable, really) can be defined
     to allow some or all of their arguments to have
     **default values**. We have already seen this with
@@ -1430,61 +1431,61 @@
     you can call it with a list of |(key, value)|
     pairs to create a dictionary that is ready to go
     with that data.
-    
+
     To define defaults for function arguments, you
     assign them where they are declared, thus:
-    
+
       def myfunc(greeting, name='Compadre'):
         print greeting, name + '!'
-    
+
     In this example, the parameter called |name| has a
     default value that will be used if the caller does
     not specify it.
-    
+
     With an understanding of defaults, it now makes
     sense to mention **named arguments**. When calling a
     function, you can specify some or all of the
     parameters by name, using |name=value| syntax.
     When arguments are named, they no longer need to
     appear in order.
-    
+
     Exercise
-    
+
     - Take a careful look at the code examples. Fiddle
       with them until they make sense.
-    
+
     - Named arguments must come last. Try uncommenting
       the final |print_many_args| call and see what
       happens.
     """
-    
+
     # If no name is specified when this is called, the
     # default value is used.
     def greet(greeting, name='Partner'):
       print greeting + ',', name + '!'
-    
+
     # Use the default name.
     greet("Howdy")
-    
+
     # Use our supplied name.
     greet("Hello", "Honey")
-    
+
     # Call using named arguments. Note that, when
     # naming arguments, order is unimportant.
     greet(name='crazy', greeting='Wow')
-    
+
     # Let's accept even more arguments.
     def print_many_args(a, b, c, d="D", e="E", f="F"):
       print a, b, c, d, e, f
-    
+
     # Regular call without defaults:
     print_many_args("1", "2", "3", e="new_E")
-    
+
     # It's always a good idea to specify default
     # arguments by name, every time. Don't do this
     # (even though it works just fine):
     print_many_args("1", "2", "3", "4", "5")
-    
+
     # This won't work at all, because named arguments
     # must come last. Try uncommenting this line and
     # see what happens:
@@ -1492,51 +1493,51 @@
   </div>
   <div name="starstar_args">
     """Named Argument (Un)packing
-    
+
     You can unpack sequences into function arguments
     by prefixing them with |*|, and you can accept
     arguments as tuples in your own functions by
     specifying a |*args| parameter. These work based
     on **argument position** - everything is sent and
     received in order.
-    
+
     In much the same way, you can unpack a dictionary
     into **named arguments** using the |**| prefix,
     and your functions can accept _otherwise
     unspecified_ named arguments in a dictionary using
     the |**kargs| notation, as shown in the code
     window.
-    
+
     Note that function parameters must be _defined_ in a
     particular order: positional first, then |*args|, then
     |**kargs|. Similarly, they must be _sent_ in a
     particular order: positional first, then named.
-    
+
     Exercises
-    
+
     - The |dict| callable creates a dictionary either
       from a sequence of |key, value| pairs or from
       its named arguments (the names become keys in
       the new dictionary). Create and print a
       dictionary using |dict| and named arguments.
-    
+
     - Now try to specify both a sequence of pairs and
       named arguments. What happens?
-    
+
     - Try calling |dict| with another dictionary and
       some named parameters. What happens?
     """
-    
+
     def takes_two(first, second):
       print "first:", first
       print "second:", second
-    
+
     # You can unpack a dictionary into named
     # arguments with **:
     #
     takes_two(**{'first': 'the first thing',
                  'second': 'the second thing'})
-    
+
     # You can also define a function that accepts
     # unknown named arguments in a dictioary. Any name
     # that is not 'prefix', 'name', or 'suffix', will
@@ -1545,70 +1546,70 @@
     def accepts_keys(prefix, name, suffix='', **kargs):
       print "The Famous", prefix, name + ',', suffix
       print "Extra Info:", kargs
-    
+
     accepts_keys("Dr.", "Batman", "PhD.", sidekick="Postdoc Robin")
     accepts_keys(name="Mata Hari", role="Spy", prefix='Ms',
                  interrogator="Sir Basil Thompson")
-    
+
     # You can also accept both types of arguments:
     #
     def accepts_everything(a, b, *args, **kargs):
       print a, b, args, kargs
-    
+
     accepts_everything(1, 2, 3, 4, 5, x='time', y='money')
   </div>
   <div name="docstrings">
     """Docstrings
-    
+
     Now that we have defined our own functions, it
     makes sense to talk about how to document them
     properly.  Earlier, it was briefly mentioned that
     comments are not the favored tool for creating
     documentation in Python: **docstrings** are.
-    
+
     A string becomes a docstring when it is the first
     statement in a module, class, or function, simply
     by virtue of its position. It does not need to be
     assigned to anything.
-    
+
     The |pydoc| utility and |help| function each
     format these docstrings and display them when
     requested.
-    
+
     At the command line, for example, you can type
-    
+
       pydoc list
-    
+
     And get a nice help page made up mostly of module
     docstrings.
-    
+
     In this interactive tutorial, you can instead call
     |help()| at the bottom of the code to see
     something similar in the output window.
-    
+
     Exercises:
-    
+
     - Try running |help()|.
-    
+
     - Try running |help(a_complex_function)|.
     """
-    
+
     __doc__ = """Short description of the module.
-    
+
     A longer description of the module. This docstring can
     be accessed in the module-global __doc__ variable.
     """
-    
+
     def a_complex_function(a, b, c):
       """Do a complex operation on a, b, and c.
-    
+
       This will do amazing things with a, b, and c. Just watch.
-    
+
       Args:
         a: A boolean value (see above).
         b: A boolean value (again, see above).
         c: A sequence.
-    
+
       Returns:
         Nothing - awesomeness needs no return value.
       """
@@ -1616,68 +1617,68 @@
       print a, b, c
       # No return statement, or an empty return statement,
       # will implicitly return None.
-    
+
     print "Result of a complex function:"
     print a_complex_function(True, False, [1,2,3,4])
-    
+
     print "The module docstring:"
     print __doc__
-    
+
     print "The function docstring:"
     print a_complex_function.__doc__
   </div>
   <div name="doctests">
     """Docstrings as Tests
-    
+
     With an understanding of docstrings, we can now
     take advantage of a very cool facility in Python
     called **doctests**.
-    
+
     Unit tests can be a real pain to write, because
     you have to force yourself to switch gears when in
     the code-writing zone. Doctests help to make it
     easier to write simple tests _while you write
     your documentation_.
-    
+
     The idea is simply this: you write, inside of the
     docstring, a short "interpreter session": you
     write down something that you could type in the
     interactive interpreter, followed by the results
     you would see after it executes. You can then
     easily test whether that actually happens or not.
-    
+
     Doctests are *usually* run by importing |doctest| and
     running |doctest.testmod()|. In our web version,
     however, we just run |_testmod|, a special
     facility for this environment.
-    
+
     We'll use doctests for the rest of the tutorials
     to help with the exercises and to show how things
     work.
-    
+
     Exercises
-    
+
     - Make |less_than_five| pass by making its
       implementation match its documentation.
-    
+
     - Make the module doctest fail. You can do
       anything (like saying that |True| produces
       |False|).
     """
-    
+
     __doc__ = """A testable module.
-    
+
     What follows is a doctest. We basically mimic the
     Python interactive interpreter prompts &gt;&gt;&gt; and ..., and
     show expected output below them.
-    
+
     &gt;&gt;&gt; less_than_five(3)
     True
     """
-    
+
     def less_than_five(a):
       """Return True if a &lt; 5.
-    
+
       &gt;&gt;&gt; less_than_five(10)
       False
       &gt;&gt;&gt; less_than_five(5)
@@ -1686,28 +1687,28 @@
       True
       """
       return a &lt;= 5
-    
+
     # Actually run the doctests:
     print "Running tests - no news is good news:"
     _testmod()
   </div>
   <div name="exercise_functions1">
     """Exercise: Functions and If (1)
-    
+
     Now we have enough tools to do something more
     interesting! Let's remind ourselves of how |if|
     and **slicing** work.
-    
+
     For this and later exercises, you will fill in the
     code marked |# TODO:| to make the doctests pass.
     Remember that you can use |[::-1]| to get a
     reversed sequence using a slice.
-    
+
     First try running the code without changes. What
     fails?
-    
+
     Exercises
-    
+
     - Write the body for the function |reverse_a| by
       replacing the |TODO| comment with real code. If
       the string |s| starts with the letter |"a"|,
@@ -1717,39 +1718,39 @@
       that the function will also work on empty
       strings.
     """
-    
+
     __doc__ = """Functions and branching exercise (1)
-    
+
     Make these tests pass:
-    
+
     &gt;&gt;&gt; reverse_a("a silly thing")
     'gniht yllis a'
-    
+
     &gt;&gt;&gt; reverse_a("not so silly")
     'not so silly'
-    
+
     &gt;&gt;&gt; reverse_a("")
     ''
     """
-    
+
     def reverse_a(s):
       """Return s reversed if it starts with a, not reversed otherwise."""
       # TODO: Fill this in.
-    
-    
+
+
     if _testmod().failed == 0:
       print "Success!"
   </div>
   <div name="exercise_functions2">
     """Exercise: Functions and If (2)
-    
+
     For this exercise, you get to write the whole
     function out, including the name and arguments.
     Docstrings are optional, but will produce more
     bonus points.
-    
+
     Exercises
-    
+
     - Write a function |every_other_arg| that accepts any number of
       arguments and returns a list containg every
       other one. Recall that |[::2]| will produce
@@ -1757,9 +1758,9 @@
       will collect all function arguments into a
       single tuple.
     """
-    
+
     __doc__ = """More Practice with Functions and Branching
-    
+
     &gt;&gt;&gt; every_other_arg(0, 1, 2, 3, 4, 5, 6)
     (0, 2, 4, 6)
     &gt;&gt;&gt; every_other_arg()
@@ -1767,42 +1768,42 @@
     &gt;&gt;&gt; every_other_arg("goodnight", 0, "my", 1, "someone")
     ('goodnight', 'my', 'someone')
     """
-    
+
     # TODO: write the function to pass the tests
     # above.
-    
-    
-    
-    
+
+
+
+
     if _testmod().failed == 0:
       print "Success!"
   </div>
   <div name="exercise_functions3">
     """Exercise: Functions and If (3)
-    
+
     This time we'll use the |sorted| builtin function,
     along with some slicing and |if| statement work,
     to make the tests pass.
-    
+
     First, a couple of reminders are in order:
-    
+
     - |sorted| accepts a sequence and returns a sorted
       list.
-    
+
     - Lists can be joined together using |+|, like
       this: |[1, 2] + [3, 4]|.
-    
+
     - Slices can use negative values to indicate
       "distance from the right side", like this: |(0,
       1, 2, 3)[-2:]|, which produces the last two
       elements |(2, 3)| (it means "start at 2 from the
       right and take everything from there"). You may
       want to review slices quickly before diving in.
-    
+
     - The length of a sequence is obtained with |len|.
-    
+
     Exercise
-    
+
     - Write the |kind_of_sorted| function and make the
       module docstring pass. It accepts one argument:
       a list, and returns that list with _all
@@ -1811,42 +1812,42 @@
       remain in the same place. Hint: what should
       happen when the list is small or empty? How
       small?
-    
+
     """
-    
+
     __doc__ = """Kind of Sorted
-    
+
     &gt;&gt;&gt; kind_of_sorted([8,7,6,5,4,3,2,1,0])
     [8, 7, 2, 3, 4, 5, 6, 1, 0]
-    
+
     &gt;&gt;&gt; kind_of_sorted([5, 4, 3, 2, 1])
     [5, 4, 3, 2, 1]
-    
+
       Now check this out - creates a list of
       characters from a string, gets it kind of
       sorted, and joins the result back into a string:
-    
+
     &gt;&gt;&gt; ''.join(kind_of_sorted(list("aragonite")))
     'araginote'
-    
+
     &gt;&gt;&gt; kind_of_sorted([])
     []
     """
-    
-    
+
+
     def kind_of_sorted(seq):
       """Sort all but the first two and last two elements."""
       # TODO: Fill this in.
-    
-    
-    
-    
+
+
+
+
     if _testmod().failed == 0:
       print "Success!"
   </div>
   <div name="main_function">
     """Main Functions
-    
+
     Python just takes your code and starts doing what
     it says, from top to bottom. When you run the code
     in the window here, Python just reads it top to
@@ -1854,116 +1855,116 @@
     like |def|, it knows to save them for later so you
     can call them. But if it encounters code that it
     can execute right away, it just does it.
-    
+
     It does this not only when running your program, but
     also _when importing modules_. Folks running |import
     foo| don't typically expect a lot of work to be done
     when they do that - they're providing the work, the
     module should just provide the tools.
-    
+
     So, modules should not typically do anything other
     than provide variables and |def| and |class|
     statements for other code to use. But, it can
     still be useful to "run" module code by itself,
     like with |doctest|.
-    
+
     We can, it turns out, have it both ways. A very
     common idiom is to check the module's |__name__|
     to determine whether it is being imported or not,
     and to act accordingly. That idiom is shown here.
-    
+
     A bit of free advice: *always do this* in real
     code.
-    
+
     Exercises
-    
+
     - Print |__name__|.
-    
+
     - Now |import math| and print |math.__name__|.
     """
-    
+
     __doc__ = """Main Functions Demo
-    
+
     When writing your code, it's a good idea to have
     as little in the module's global namespace as
     possible. This is typically accomplished by
     testing the module's __name__ and providing a main
     function where all of the work is really done.
-    
+
     See below: we test __name__ == '__main__'. If it
     does, we are not being imported, so we execute the
     main function. Otherwise we do nothing (and just
     provide stuff for other people to use).
     """
-    
-    
+
+
     def main():
       print "Here is where we do the *real* work."
-    
-    
+
+
     if __name__ == '__main__':
       main()
   </div>
   <div name="recursion">
     """Recursion
-    
+
     With an understanding of how to write and call
     functions, we can now combine the two concepts in
     a really nifty way called **recursion**. For
     seasoned programmers, this concept will not be at
     all new - please feel free to move on. Everyone
     else: strap in.
-    
+
     Python functions, like those in many programming
     languages, are _recurrent_: they can "call
     themselves".
-    
+
     A |def| is really a sort of template: it tells you
     *how something is to be done*. When you call it,
     you are making it do something *specific*, because
     you are providing all of the needed data as
     arguments.
-    
+
     From inside of the function, you can call that
     same template with something specific *and
     different* - this is recursion.
-    
+
     For example, look at the |factorial| function in
     the code window.
-    
+
     It starts with a **base case**, which is usually a
     really easy version of the problem, where you know
     the answer right away. For non-easy versions of the
     problem, it then defines a **recursion**, where
     it calls itself with a smaller version of the
     problem and uses that to compute the answwer.
-    
+
     Exercises
-    
+
     - Uncomment the |print| statements inside of |factorial|
       (above and below |smaller_problem|) to see what
       is happening.
     """
-    
+
     __doc__ = """Introduction to Recursion
-    
+
     The "factorial" of something is formed by
     multiplying all of the integers from 1 to the
     given number, like this:
-    
+
       factorial(5) == 5 * 4 * 3 * 2 * 1
-    
+
     You can do this recursively by noting that, e.g.,
-    
+
       factorial(5) == 5 * factorial(4)
-    
+
     This can't go forever, because we know that
-    
+
       factorial(1) == 1
-    
+
     See below.
     """
-    
+
     def factorial(n):
       if n &lt;= 1:
         return n
@@ -1971,8 +1972,8 @@
       smaller_problem = factorial(n - 1)
       # print "after recursion", n
       return n * smaller_problem
-    
-    
+
+
     # This gets big fast
     print "2! =", factorial(2)
     print "7! =", factorial(7)
@@ -1980,56 +1981,56 @@
   </div>
   <div name="exercise_recursion1">
     """Exercise: Recursion (1)
-    
+
     Recursion is a pretty powerful idea. You can do a
     lot with it. In fact, you can do so much with it
     that some languages (not Python) use it as their
     main way of getting things done.
-    
+
     Now you get to practice the idea of recusion with
     a simple problem. Before starting, though,
     remember these things:
-    
+
     - Start with a *very easy* version of the problem.
       When do you know the answer without having to
       think about it? Write that down first and test
       it.
-    
+
     - Then consider a slightly bigger version of the
       problem. How can you make it a bit smaller and
       use that to get the answer?
-    
+
     You'll get lots of help on this one, so don't
     worry.
-    
+
     Exercises
-    
+
     - Write the |add_all| function as described in the
       docstring and its tests. A good base case for
       this is an empty list, which would have a sum of
       |0|. This is outlined in the first |TODO|.
-    
+
     - Now write the recursion. You can use a slice to
       peel off one value and add it to the sum of _the
       rest of the list_. This is outlined in the
       second |TODO|.
     """
-    
+
     __doc__ = """Sum a List With Recursion
-    
+
     &gt;&gt;&gt; add_all([])
     0
-    
+
     &gt;&gt;&gt; add_all([1])
     1
-    
+
     &gt;&gt;&gt; add_all([3, 4])
     7
-    
+
     &gt;&gt;&gt; add_all(range(1, 11))
     55
     """
-    
+
     def add_all(seq):
       """Add all elements of a list."""
       # TODO: Write a base case: return 0 if the list
@@ -2042,126 +2043,126 @@
       # take one from the back (seq[-1]) and add it to
       # the rest, like this:
       # return seq[-1] + add_all(seq[:-1])
-    
-    
+
+
     if _testmod().failed == 0:
       print "Success!"
   </div>
   <div name="exercise_recursion2">
     """Exercise: Recursion (2)
-    
+
     Now we'll do something a little bit more
     interesting. We'll implement the Fibonacci
     sequence.
-    
+
     The Fibonacci sequence shows up in lots of
     interesting places:
-    
+
     http://en.wikipedia.org/wiki/Fibonacci_number
-    
+
     In a nutshell, every number in the sequence is
     found by adding the previous two numbers, making a
     sequence like this:
-    
+
       1 1 2 3 5 8 13 21 ...
-    
+
     The base case for this is "elements 0 and 1 get
     value 1". After that it's just "sum the previous
     two to get the next one."
-    
+
     Exercises
-    
+
     - Implement a function that returns the nth
       Fibonacci number. A base case has been provided;
       you fill in the recursion. Hint: you need
       |fibonacci| values for |n-1| and |n-2| to get
       your answer.
-    
+
     Bonus Work
-    
+
     - Implement a function |binary_search(value,
       sequence)| that does binary search on an ordered
       sequence by calling itself on smaller and
       smaller slices.
     """
-    
+
     __doc__ = """Compute the Nth Fibonacci Number.
-    
+
     &gt;&gt;&gt; fibonacci(0)
     1
-    
+
     &gt;&gt;&gt; fibonacci(6)
     13
-    
+
     &gt;&gt;&gt; fibonacci(7)
     21
     """
-    
+
     def fibonacci(n):
       """Compute the nth Fibonacci number."""
       if n &lt;= 1:
         return 1
       # TODO: Fibonacci sequence
-    
-    
-    
-    
+
+
+
+
     if _testmod().failed == 0:
       print "Success!"
   </div>
   <div name="while_loops">
     """"While" Loops
-    
+
     Recursion is powerful, but not always convenient
     or efficient for processing sequences.  That's why
     Python has **loops**.
-    
+
     A _loop_ is just what it sounds like: you do
     something, then you go round and do it again, like
     a track: you run around, then you run around again.
-    
+
     Loops let you do repetitive things, like printing
     all of the elements of a list, or adding them all
     together, without using recursion.
-    
+
     Python supports two kinds. We'll start with
     **while loops**.
-    
+
     A |while| statement is like an |if| statement, in
     that it executes the indented block if its condition is
     |True| (nonzero). But, unlike |if|, it *keeps on
     doing it* until the condition becomes |False| or
     it hits a |break| statement. Forever.
-    
+
     The code window shows a while loop that prints
     every element of a list. There's another one that
     adds all of the elements. It does this
     without recursion. Check it out.
-    
+
     Exercises
-    
+
     - Look at |print_all|. Why does it eventually
       stop? What is the value of |i| when it does?
-    
+
     - Why does |slicing_print_all| stop? How does it
       work?
     """
-    
+
     __doc__ = """Use while loops to do things repetitively."""
-    
+
     def print_all(seq):
       """Print all elements of seq."""
       i = 0
       while i &lt; len(seq):
         print "item", i, seq[i]
         i = i + 1  # This is also spelled 'i += 1'
-    
+
     def slicing_print_all(seq):
       """Another way of using while - less efficient."""
       while seq:
         print seq[0]
         seq = seq[1:]
-    
+
     def add_all(seq):
       """Add all of the elements of seq."""
       i = 0
@@ -2170,105 +2171,105 @@
         s += seq[i]
         i += 1
       return s
-    
+
     print "Using indices:"
     print_all([1, 5, 8, "hello", 9])
-    
+
     print "Using slices:"
     slicing_print_all(range(3))
-    
+
     print "Summing:"
     print "sum of all:", add_all(range(1,12))  # Should be 66
   </div>
   <div name="for_loops">
     """"For" Loops
-    
+
     A much more common loop in Python is the |for|
     loop, short for "for every". It is much more
     convenient than |while| for doing something to
     every element of a sequence:
-    
+
       for variable in sequence:
         body_statements
-    
+
     Every time through the loop, |variable| is
     assigned the next element in |sequence|, and
     |body_statements| are executed. When there are no
     elements left, the statement exits.
-    
+
     Of note is the use of the |in| keyword. But in this
     case it is not used merely as a test for containment, it is
     used as a way of saying "give me *everything* |in
     sequence|, one at a time in |variable|".
-    
+
     Finally, we also revisit the concept of _unpacking
     assignment_. Note the loop that says |for i, x in
     ...|, which is a kind of assignment, one
     that happens every time the loop starts; unpacking
     works here too.
     """
-    
+
     __doc__ = """For Loops"""
-    
+
     # For loops help you iterate over sequences:
-    
+
     seq = [1, 3, 6, 10]
-    
+
     print "sequence output"
     for x in seq:
       print x
-    
-    
+
+
     # Here's a way to add up all of the numbers in a
     # sequence:
     s = 0
     for x in seq:
       s += x  # Also spelled 's = s + x'
     print "sum", s
-    
+
     # Note that you can also do unpacking assignment
     # in the loop itself:
-    
+
     pairs = [(1, 'a'), (2, 'b'), (3, 'c')]
-    
+
     for x, y in pairs:
       print "x:", x, "y:", y
   </div>
   <div name="exercise_forloops1">
     """Exercise: For Loops (1)
-    
+
     For loops are pretty handy and compactly defined.
     They fit the way that people think when they want
     to "do something to everything in this list".
-    
+
     They're also good for making one list from another
     one. We'll do that, here.
-    
+
     Sometimes you have a list, and you realy just want
     to know which _index_ each value has. For example,
     you want to take a sentence and associate a
     location to each word.
-    
+
     In this particular case, it is a convenient way of
     converting each pair into named variables without
     |[]|-indexing.
-    
+
     Exercises
-    
+
     - Write the |enumerator| function, which takes a
       sequence of items and returns a sequence of
       pairs, as described in the TODO. Make the test pass.
     """
-    
+
     __doc__ = """Enumerator Exercise
-    
+
     &gt;&gt;&gt; enumerator("stuff")
     [(0, 's'), (1, 't'), (2, 'u'), (3, 'f'), (4, 'f')]
     &gt;&gt;&gt; enumerator(['a', 'b', 'c', 'd'])
     [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')]
     """
-    
-    
+
+
     def enumerator(seq):
       """[item, item, ...] -&gt; [(0, item), (1, item), ...]"""
       # TODO: Implement this using a 'for' loop. Create a
@@ -2276,12 +2277,12 @@
       # HINT: The range function is useful for getting a
       # list of indices into a sequence, if you can take
       # its len.
-    
-    
+
+
     if __name__ == '__main__':
       if not _testmod().failed:
         print "Success!"
-    
+
       # Note how, when we know we have a list of pairs, we
       # can just unpack them right in the loop statement.
       for i, x in enumerator("a sequence of characters"):
@@ -2289,16 +2290,16 @@
   </div>
   <div name="exercise_forloops2">
     """Exercise: For Loops (2)
-    
+
     For loops are fundamental in many languages, but
     because of generators, which we'll discuss soon,
     you see them even more in Python than elsewhere,
     so we're going to pause and practice just a bit
     more.
-    
+
     There are a couple of reminders that will probably
     help you for this exercise:
-    
+
     - You can unpack _any_ tuple into variables like
       this: |a, b = "my", "tuple"| (recall that
       non-empty tuples can be defined without
@@ -2306,34 +2307,34 @@
       things at once pretty convenient. This can make
       the iterative |fibonacci| function really easy
       to follow, for example.
-    
+
     - There are special assignment operators that
       allow the expression of things like |a = a + 1|
       to be written as |a += 1| instead.  This pattern
       works for all binary operators, including the
       standard math operators like multiplication,
       division, addition, subtraction, and more.
-    
+
     - You can get a sequence of integers by using the
       |range| function. This can be useful in loops,
       e.g., |for i in range(n):|, which assigns the
       numbers |0| through |n-1| to |i|, one at a time.
-    
+
     Exercises
-    
+
     - Implement |fibonacci| again, but this time with
       |for| loops.
     """
-    
+
     __doc__ = """Loop Exercises
-    
+
     &gt;&gt;&gt; fib = []
     &gt;&gt;&gt; for i in range(10):
     ...   fib.append(fibonacci(i))
     &gt;&gt;&gt; fib
     [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
     """
-    
+
     def fibonacci(n):
       """Returns nth element of the Fibonacci sequence.
       """
@@ -2346,120 +2347,120 @@
       # one (which becomes one of the last two for next
       # time).
       return x1
-    
-    
+
+
     if __name__ == '__main__':
       if not _testmod().failed:
         print "Success!"
   </div>
   <div name="files">
     """Files
-    
+
     We're getting close to being able to write
     something really useful. To do that, we need to
     _receive_ data from the outside world, not just
     _produce_ it.
-    
+
     In this environment, you can access a virtual filesystem
     that is part of the in-browser interpreter.
     Let's do something silly: let's get
     all of the lines of the Python |string| module
     and print out the ones that contain comments.
-    
+
     To do this, we'll use the builtin |open| function.
     It takes a filename as an argument and returns a
     "file-like" object. In Python-speak, this means it
     supports some basic things like |read|, |write|
     (if writeable), and _iteration_.
-    
+
     Because file objects are **iterable**, they can be
     used as the sequence in a |for| loop. When used
     like this, they look like a sequence of lines.
-    
+
     Another tidbit in the code is the use of |lstrip|
     and |rstrip| on each line in the file:
-    
+
     - |lstrip|: strip whitespace from the left
-    
+
     - |rstrip|: strip whitespace from the right
       (including newlines)
-    
+
     There is also |strip|, which strips it from both sides.
     """
-    
+
     __doc__ = """Files: Opening the Code"""
-    
+
     f = open('lib/pypyjs/lib_pypy/string.py')
-    
+
     for line in f:
       if line.lstrip().startswith('#'):  # ignore leading space
         print line.rstrip()  # strip trailing space, including \n.
-    
+
     f.close()
   </div>
   <div name="list_dir">
     """More on Files: Listing Directories
-    
+
     Before we move on, let's do one more thing with
     files.
-    
+
     Here, we will list all files in a directory and
     stick them into a list before outputting them.
-    
+
     To do this, we import the |listdir| function from
     the |os| module. Heed the comment above the
     import, though - in the name of education we are
     ignoring best practice.
-    
+
     Incidentally, the |os| module has a lot of
     interesting stuff in it. It's worth poking around
     the documentation when you can.
-    
+
     Finally, note that we are using the |str.join|
     method, here, to print out the listing. Here
     |join| is called on the _delimiter_, and the list
     of strings is an argument. They are then joined
     into a single string. Take some time to understand
     what's happening.
-    
+
     Exercises
-    
+
     - Change the loop to only output names that end in
       |.py| and contain the word 'exercise'. You may
       find the |and| operator useful for doing this
       (there is also an |or| operator).
     """
-    
+
     __doc__ = """A Note on Imports
-    
+
     It's usually best to import modules, not import
     stuff *out* of modules. This makes it easier to
     tell where things come from after you've been away
     for a while.
-    
+
     We'll ignore that just to show how 'from' and 'as'
     work.
     """
-    
+
     from os import listdir
     from os.path import join as pathjoin
-    
+
     parent = 'lib/pypyjs/lib_pypy'
-    
+
     all_files = []
     for name in listdir(parent):
       if not name.endswith('.py'):
         # Remember: 'continue' means 'jump to the top
         # of the loop again'.
         continue
-    
+
       all_files.append(pathjoin(parent, name))
-    
+
     print '\n'.join(all_files)
   </div>
   <div name="with_tracker_intro">
     """"With" Statements, and Our Tracker
-    
+
     Now that we've fiddled around a bit with files and
     getting web content, we know that we don't really
     need to do much more with those: they're just
@@ -2468,25 +2469,25 @@
     long strings without hitting the file system or
     even the web, so we'll mostly proceed with smaller
     in-code data.
-    
+
     Coming Up
-    
+
     In the upcoming series of exercises and
     instructive slides, we'll build all of the pieces
     of a weight tracker with charts for your ... cat.
     Or dog. Or whatever politically correct and
     unembarrassing thing that you aren't allergic to.
-    
+
     The idea will be to (eventually) produce a nice
     chart to demonstrate to kitteh's vet that the diet
     is going well.
-    
+
     One More Concept
-    
+
     This is chance to take another deep breath before
     the plunge. Let's quickly talk about files and
     |with| before we do.
-    
+
     When using files, it's usually a good idea to make
     sure that they're closed when we're done with
     them, even if something goes wrong. An example of
@@ -2495,50 +2496,50 @@
     works, just get used to seeing it, particularly
     when working with files.
     """
-    
+
     __doc__ = """With Statements
-    
+
     The "with" statement sets up a *context*. A
     context is an opportunity to do something with a
     resource, then have it automatically cleaned up
     when you're done.
-    
+
     Files are a great and common example of why you
     want one: opening the file provides a context -
     you work with the file, and when the context
     exits, it closes it for you, even if your code has
     a fatal error.
-    
+
     Another example is synchronization primitives like
     mutexes, which you want to release after you're
     done with them.
     """
-    
+
     import os.path
-    
+
     filename = os.path.join("lib", "pypyjs", "lib_pypy", "warnings.py")
-    
+
     with open(filename) as f:
       print f.read()
   </div>
   <div name="raising_exceptions">
     """Raising Exceptions
-    
+
     We want to build a basic tracker that can plot
     data in a nice chart. The exercises are going to
     be getting a bit longer, now.
-    
+
     The format that we expect is a file of lines
     containing universal (and sortable) date strings,
     and a floating point measurement after some space,
     as shown in the accompanying code documentation.
-    
+
     We will write a function that takes a file-like
     object and produces a list of (date, measurement)
     string pairs. If the dates are out of order, it
     will **raise** a builtin |ValueError|
     **exception**.
-    
+
     This part is new: exceptions are, kind of like
     |return|, a way of exiting a function early. But
     unlike |return|, they exit *all calling functions,
@@ -2546,33 +2547,33 @@
     exception is explicitly handled. They are for
     "exceptional" cases, like errors when you can't
     really recover because the problem is elsewhere.
-    
+
     We'll get more into them later. For now, the idea
     is to use the |raise| keyword, then pass a message
     using the |ValueError| exception, which is, of
     course, callable.
-    
+
     Exercises
-    
+
     - Fill in the parts marked |# TODO| in the
       parse_measurements function. The description of
       what to do is there. You can test it by running
       it (which executes the doctest at the top of the
       module).
     """
-    
+
     __doc__ = """Parse dates, ensure monotonicity.
-    
+
     We parse this format of "date measurement" entries, ensuring
     that the dates are in strictly ascending order.
-    
+
       2012-11-10 9.6
       2012-11-11 9.5
       2012-11-12 9.4
       2012-11-13 9.1
-    
+
     Blank lines and comment lines are also allowed. See the tests here.
-    
+
     &gt;&gt;&gt; parse_measurements(['  2012-10-10 5.4 \\n',
     ...                     ' # comment!\\n',
     ...                     '2012-10-11 5.3'])
@@ -2583,7 +2584,7 @@
     ...
     ValueError: Non-increasing dates: 2012-10-10 -&gt; 2012-10-09
     """
-    
+
     def parse_measurements(lines):
       """Parse date-measurement entries from lines. See docs above."""
       last_date = ""  # less than all other strings
@@ -2602,76 +2603,76 @@
         #
         # - Don't forget to set last_date down at the
         #   bottom, here! (last_date = date).
-    
+
         print [date, measurement]
-    
-    
+
+
     if __name__ == '__main__':
       if _testmod().failed == 0:
         print "Success!"
   </div>
   <div name="string_formatting">
     """String Formatting
-    
+
     A quick detour is in order, here, since we just used a
     new concept without saying a word about it when we
     raised |ValueError|.
-    
+
     Recall the following code:
-    
+
       "Non-increasing dates: %s -&gt; %s" % (
         last_date, date))
-    
+
     What is up with |"%s"| and the |%| operator on a
     string? When applied to integers, |%| computes the
     _modulus_ (division remainder), but when operating
     on a string, it does _substitution_ (for those
     familiar with C, this is _printf-style_). Some
     examples are in the code window.
-    
+
     There are actually many other format specifiers
     (the |%| inside the strings), too many to go into
     in this tutorial. Full documentation is available
     here:
-    
+
     http://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting
-    
+
     The |%|-formatting is old and on its way out, but still
     plenty popular and ubiquitous, so understanding it is
     worthwhile. |str.format| is pretty neat, so take a look
     at the documentation for it when you feel like some
     heavy reading:
-    
+
     http://docs.python.org/2/library/string.html#formatstrings
-    
+
     We'll use a bit of both, but |str.format| has many
     advantages (including incraesed clarity), so we'll
     gravitate to it over time.
     """
-    
+
     import math
-    
+
     # If you only have one format specifier, and the right
     # side is also a string, you can omit the tuple syntax.
     print "Hi there, %s!" % "you"
-    
+
     # Integers get to use %d (for "decimal" - %x would be
     # "hex").
     print "Base 10: %d, Base 16: %x, Base 16: %X" % (30, 30, 30)
-    
+
     # Floating point is %f or %g, and I can never remember
     # which one I want, so I go with %f most of the time
     # unless it frustrates me enough to dig through the
     # docs.
     print "A floating point number: %f" % (math.pi)
-    
+
     # You can also specify width and such with numeric
     # types.
     print "A width-constrained number: %.2f" % (math.pi)
-    
+
     # And, you can get the repr of anything by using %r.
     print "The repr of a few things: %r %r %r %r" % ('hi', 26j, 17.4, len)
-    
+
     # There is also a whole new way of formatting strings
     # that is really nice and super cool and has loads of
     # flexibility and documentation: str.format.
@@ -2681,18 +2682,18 @@
   </div>
   <div name="generators">
     """Generators
-    
+
     It's head-exploding time!
-    
+
     We recently wrote a function that, given lines
     with dates and measurements, splits them up,
     makes sure they only move forward, and prints them
     out.
-    
+
     Printing is nice, but not impressively useful or
     exciting. We want to _transform_ this data
     (eventually into a chart), not just output it.
-    
+
     Instead of printing, the function can be made more
     generally useful by returning a list. In fact,
     that's what we've done here. Take a look and see
@@ -2701,7 +2702,7 @@
     and the consumer may only need things one at a
     time, the entire dataset must be in memory for
     this to work.
-    
+
     Let's fix that using one of Python's more powerful
     and elegant constructs: the **iterator generator**.
     By placing a "yield" keyword in the function, the
@@ -2710,31 +2711,31 @@
     produce _all yielded values_ one at a time, when
     asked. Recall that |for| loops work with
     iterables, as does the |list| builtin.
-    
+
     Exercises
-    
+
     - Replace the code as described in the TODO
       sections and see how it works (and notice that
       we changed the name of the function to reflect
       what it returns).
-    
+
     - Write a |for| loop in the main code (replace the
       use of |_testmod| if you want) that
       outputs the result of |parsed_measurements(...)|
       with some lines of your own.
     """
-    
+
     __doc__ = """Some notes on 'parsed_measurements'.
-    
+
     This passes right now. Your job is to convert the
     function to a generator and keep it passing.
-    
+
     &gt;&gt;&gt; list(parsed_measurements(['2012-10-10 5.4',
     ...                           '2012-10-11 5.3']))
     [('2012-10-10', '5.4'), ('2012-10-11', '5.3')]
     """
-    
-    
+
+
     def parsed_measurements(lines):
       # TODO:
       # Remove this values list. Just kill it.
@@ -2744,11 +2745,11 @@
         line = line.strip()
         if not line or line.startswith('#'):
           continue
-    
+
         date, measurement = line.split()
         if date &lt;= last_date:
           raise ValueError("Non-increasing: %s -&gt; %s" % (last_date, date))
-    
+
         # TODO:
         # Replace this line with
         #   yield date, measurement
@@ -2757,23 +2758,23 @@
         # out what is going on.
         values.append((date, measurement))
       return values
-    
-    
+
+
     if __name__ == '__main__':
       if _testmod().failed == 0:
         print "Success!"
   </div>
   <div name="generators2">
     """Generators, Explained
-    
+
     Let's talk more about what you just did.
-    
+
     When you write a function that has a |yield|
     keyword, that function is transformed into an
     **iterator generator**, meaning that when you call
     it, it creates and returns an iterator that you
     can use to get at the values that it yields.
-    
+
     We will talk more about the concept of
     **iterators** a little later on, but you should
     know that |for| loops actually work with
@@ -2781,12 +2782,12 @@
     something that you can call |next()| on, and it
     will produce a new value until it doesn't have any
     more.
-    
+
     The example in the code window illustrates some of
     these concepts. Returning a list does just what
     you would expect, so printing it shows you a nice
     list.
-    
+
     Calling a generator, however, does not return you
     a list, but ... something else. That something is
     an iterator that you can get values out of
@@ -2794,7 +2795,7 @@
     |next(...)| on it to get one value at a time, and
     we also use it in a |for| loop.
     """
-    
+
     # A perfectly normal function.
     #
     def get_a_list():
@@ -2802,19 +2803,19 @@
       for x in range(10):
         my_list.append(x)
       return my_list
-    
-    
+
+
     # A similar function, but it's really a generator.
     #
     def get_an_iterator():
       for x in range(10):
         yield x
-    
-    
+
+
     print "Getting a list:", get_a_list()
-    
+
     my_iter = get_an_iterator()
-    
+
     print "Got ... something:", my_iter
     print "Getting the next value:", next(my_iter)
     print "Looping over the rest of it:"
@@ -2823,32 +2824,32 @@
   </div>
   <div name="generators3">
     """Generators for Refactoring
-    
+
     Now that we know how to make our own generators,
     let's do some refactoring to make use of this idea
     and clean up the code a bit. We'll start by
     splitting out the |clean_lines| function, which
     basically just skips blank lines and comments,
     stripping unnecessary space.
-    
+
     This notion of converting one iterator into
     another is prevalent in Python. As one rather
     common example, the |enumerate| builtin converts
     an iterable over items into an iterable over
     |(index,item)| pairs. You built something similar
     earlier.
-    
+
     Generators make refactoring sequence operations
     really easy, even operations that need to remember
     something about past elements. Without them,
     separating functionality like this would be hard
     or sometimes even impossible.
-    
+
     Exercises
-    
+
     - Look carefully at "clean_lines" and make sure
       you understand how it works.
-    
+
     - Use "enumerate" to get line numbers with the
       data, and emit that line number in the
       ValueError message. Note that in string
@@ -2858,13 +2859,13 @@
       |format|. So, you could use |{2}| for the line
       number if you want.
     """
-    
+
     __doc__ = """Refactoring functionality.
-    
+
     Changes: we now clean out comments and blank lines
     in a different function, and the error message for
     bad dates has the line number in it.
-    
+
     &gt;&gt;&gt; list(parsed_measurements(['2012-10-10 5.4', '2012-10-11 5.3']))
     [('2012-10-10', '5.4'), ('2012-10-11', '5.3')]
     &gt;&gt;&gt; list(parsed_measurements(['2012-10-10 5.4', '2012-10-09 5.3']))
@@ -2872,15 +2873,15 @@
     ...
     ValueError: Non-increasing (2): 2012-10-10 -&gt; 2012-10-09
     """
-    
+
     def clean_lines(lines):
       for line in lines:
         line = line.strip()
         if not line or line.startswith('#'):
           continue
         yield line
-    
-    
+
+
     def parsed_measurements(lines):
       last_date = ""
       # TODO:
@@ -2895,15 +2896,15 @@
             last_date, date))
         last_date = date
         yield date, measurement
-    
-    
+
+
     if __name__ == '__main__':
       if not _testmod().failed:
         print "Success!"
   </div>
   <div name="type_conversion">
     """Real Dates, and Strings to Numbers
-    
+
     So far we have done everything with strings. Now
     it's time to start using more interesting and
     appropriate objects. We can't very well do math
@@ -2911,58 +2912,58 @@
     manipulate our dates in more meaningful ways than
     strings will allow, like outputting alternate date
     formats.
-    
+
     Take a look at the doctest for
     |parsed_measurements|. It shows how we should be
     able to emit European date formats once we're
     done.
-    
+
     We'll convert strings to numbers using |float|,
     and strings to dates using the |datetime| module.
-    
+
     Note that |strptime| means "parse this string into
     a |datetime|" and |strftime| means "format this
     |datetime| into a string". The ugly names are
     historical and therefore traditional and sacred.
-    
+
     By the way, we have also started using **named
     substitutions** in |str.format|. Check it out.
-    
+
     Exercises
-    
+
     - Fill in the part marked |# TODO|, making
       |measurement| into a float, and |date| into a
       |datetime| object.
-    
+
     Bonus Work
-    
+
     - Convert the final object into a |date| instead
       of a |datetime|, since it doesn't have a time
       component anyway. You may want to look at the
       help for |datetime.datetime|.
     """
-    
+
     __doc__ = """Convert lines 'date measurement' into pairs.
-    
+
     &gt;&gt;&gt; lines = ['2012-10-10 5.3', '2012-10-11 5.4']
-    
+
     &gt;&gt;&gt; for d, w in parsed_measurements(lines):
     ...   print type(d), d, type(w), w
     &lt;type 'datetime.datetime'&gt; 2012-10-10 00:00:00 &lt;type 'float'&gt; 5.3
     &lt;type 'datetime.datetime'&gt; 2012-10-11 00:00:00 &lt;type 'float'&gt; 5.4
-    
+
     &gt;&gt;&gt; for d, w in parsed_measurements(lines):
     ...   print d.strftime("%d/%m/%Y"), w
     10/10/2012 5.3
     11/10/2012 5.4
     """
-    
+
     # Not a module, but seriously? Who wants to type
     # "datetime.datetime.stuff" all the time?
     # Sometimes breaking the rules makes sense. :-)
     from datetime import datetime
-    
-    
+
+
     def parsed_measurements(lines):
       last_date = ""
       for i, line in enumerate(clean_lines(lines)):
@@ -2971,85 +2972,85 @@
           raise ValueError(
             "Non-increasing ({line}): {prev} -&gt; {next}".format(
               line=i+1, prev=last_date, next=datestr))
-    
+
         # TODO: convert measurement to a float, and
         # use datetime.strptime(datestr, '%Y-%m-%d')
         # to get a real date object called 'date'.
         # Yield those instead.
-    
+
         last_date = datestr
         yield datestr, measurement
-    
-    
+
+
     def clean_lines(lines):
       for line in lines:
         line = line.strip()
         if not line or line.startswith('#'):
           continue
         yield line
-    
-    
+
+
     if __name__ == "__main__":
       if _testmod().failed == 0:
         print "Success!"
   </div>
   <div name="iterables">
     """Iterables and Iterators
-    
+
     It has been mentioned that |for| loops iterate
     over any **iterable**, not just any sequence type.
     We also had a taste of what iterators do when
     discussing generators. Let's expand on that, now.
-    
+
     The concept of iterable is more general than
     that of a sequence. In Python terms, an iterable
     is anything that can, when asked for it via
     |iter|, produce an iterator.
-    
+
     Iterables include such things as lists, tuples,
     strings, sets, dictionaries, files, and of course,
     generators.
-    
+
     You can obviously use an iterable in a |for| loop,
     but that is not all. You can also ask one for an
     iterator that you can advance _by hand_. We
     haven't done that very much before, so let's do it
     now.
-    
+
     An important thing to note about iterators is
     that, once partially consumed, they do not rewind.
     Looping over a partially-consumed iterator begins
     where it last left off.
-    
+
     When an iterator is exhausted, advancing it causes
     the builtin |StopIteration| exception to be
     raised. |for| loops know how to handle this,
     exiting cleanly when it occurs. When advancing
     things by hand, you have to be aware of it.
-    
+
     The sample code demonstrates how these work,
     including the |StopIteration| exception. Take time
     to understand the examples.
     """
-    
+
     import string
-    
+
     # This is a string, and is therefore iterable
     #
     letters = string.ascii_lowercase
     print letters
-    
+
     # So, we can get an iterator from it.
     #
     letter_iter = iter(letters)
     print letter_iter
-    
+
     # And we can call next on it to get a value and advance
     # it.
     #
     print next(letter_iter)
     print next(letter_iter)
-    
+
     # Iterators are iterables that return themselves when
     # asked for an iterator, so they can also be used in
     # "for" loops. Note how it starts where it left off. It
@@ -3058,13 +3059,13 @@
     for letter in letter_iter:
       print letter,
     print
-    
+
     # Let's advance to the end.
     #
     item_iter = iter((1,2))
     print next(item_iter)
     print next(item_iter)
-    
+
     # StopIteration exception!
     # "For" loops know how to handle this and exit cleanly
     # when they see StopIteration.
@@ -3073,36 +3074,36 @@
   </div>
   <div name="exceptions">
     """Exceptions
-    
+
     We have mentioned that a |for| loop knows when to
     stop looping by intercepting the |StopIteration|
     exception. We can also do that by hand.
-    
+
     In fact, we can write an equivalent |while| loop
     by first creating an iterator, then calling |next|
     within a |try|/|except| block that breaks the loop
     when it gets a |StopIteration| exception.
-    
+
     Observe the |try|/|except| block in the code.
     Statements that might raise an exception are in
     the |try| block.  You can then handle those
     exceptions in the |except| part, and there can be
     more than one of these, e.g., if you want to do
     different things for different exceptions.
-    
+
     The |Type as value| syntax is how we get at the
     actual exception data, if we want it. Here we
     discard it (in which case, we could have left off
     |as e| altogether and just said |except
     StopIteration:|).
-    
+
     Exercises
-    
+
     - Try printing |e| and |repr(e)|. See what it looks like.
-    
+
     - Try removing the |try|/|except| block in the
       |while| loop and just printing. What happens?
-    
+
     - Inside of |call_ponies|, Wrap the call to
       |print_ponies| in a |try|/|except| block that
       catches the exception and prints it out instead
@@ -3111,7 +3112,7 @@
     for x in "A pony, for me?":
       print x,
     print
-    
+
     # Equivalent to the above is this "while" loop.
     #
     range_iter = iter("No pony for you today.")
@@ -3122,7 +3123,7 @@
         break  # end the loop early and cleanly
     print
     # Clean exit!
-    
+
     # Now for a more general exception raising/catching
     # example.
     #
@@ -3132,28 +3133,28 @@
         # the function to terminate immediately.
         raise ValueError("You have a debt of {n} ponies.".format(n=number))
       print "You have {n} ponies".format(n=number)
-    
+
     def call_ponies(number):
       print_ponies(number)
       print "No pony errors!"
-    
+
     call_ponies(10)
     call_ponies(-2)
   </div>
   <div name="generator_smoothing">
     """Smoothing Generator
-    
+
     Anyone who has weighed their kitten will know that
     weight fluctuates from day to day. What you really
     want to know is whether the overall trend is good,
     not whether there has been more or less (to put it
     delicately) water output that day. You want the
     trend smoothed out over time.
-    
+
     Your task: fill in the part marked |TODO| to do
     this smoothing without any |if| statements inside
     of loops.
-    
+
     To accomplish this, we will again use a generator.
     This one will accept an iterable of floating point
     values and produce smoothed floating point values
@@ -3161,34 +3162,34 @@
     not taking the nature of our full date-endowed
     data into account. We'll run into that again
     later.
-    
+
     Meanwhile, there's a nifty new concept hiding out
     in the code's doctest: _list comprehensions_. The
     gist: you can embed |for| syntax directly into
     list construction. Try to understand the
     comprehension in the docstring after you finish
     the exercise. We'll talk more about it later.
-    
+
     Exercises
-    
+
     - Fill in the part marked |TODO| by following the
       instructions in the comments. Try _not_ to use |if|
       to test for the first run through the loop.
     """
-    
+
     __doc__ = """Smoothing using a generator.
-    
+
     "exponentially_smoothed" applies exponential
     smoothing to values. The first smoothed value is
     just the value itself. After that, each smoothed
     value is calculated to be 10% of the distance to
     the new value.
-    
+
     &gt;&gt;&gt; values = [8.2, 8.1, 8.0, 7.8, 7.9, 8.0, 7.5]
     &gt;&gt;&gt; ["{0:.2f}".format(x) for x in exponentially_smoothed(values)]
     ['8.20', '8.19', '8.17', '8.13', '8.11', '8.10', '8.04']
     """
-    
+
     def exponentially_smoothed(numbers):
       """Generate a smoothed sequence for the given numbers.
       """
@@ -3198,24 +3199,24 @@
       # 10% of the difference between the current
       # measurement and the previous smoothed value, thus:
       # smoothed += 0.1 * (value - smoothed)
-    
-    
+
+
     if __name__ == '__main__':
       if not _testmod().failed:
         print "Success!"
   </div>
   <div name="function_objects">
     """Function Objects
-    
+
     It's time for another short detour into language
     concepts.
-    
+
     Functions in Python are just a form of data like
     everything else. They can be assigned to
     variables, created and returned from other
     functions, etc. This can help us solve some
     otherwise thorny problems in a clean way.
-    
+
     When you define a function _inside_ of another
     one, this is called a **closure**. It is special
     because it can not only see variables that are
@@ -3224,13 +3225,13 @@
     created every time the outer function is called,
     you can use this to create new custom functions on
     demand.
-    
+
     Look at the example code in the code window. Take
     a look at how |make_stuff_printer| defines an
     inner function, and then *returns* it. We then
     assign it to a variable, and by putting |()| after
     it, we *call* it.
-    
+
     Note that you can't actually change the
     assignment of outer variables in Python 2 unless
     they're global. You can in Python 3 using the
@@ -3238,43 +3239,43 @@
     resort to hackery like assigning to outer list
     elements. That was foreshadowing, in case you
     missed it.
-    
+
     Exercises
-    
+
     - Study the example code, see if you can predict
       what it will do, then run it.
-    
+
     - Try calling |p()| _twice_ inside of the last
       |for| loop. What does it do? Why?
     """
-    
+
     # This is a function that returns another function.
     def make_stuff_printer(stuff):
       # The inner function has access to the "stuff"
       # variable passed into the outer function.
       def stuff_printer():
         print stuff
-    
+
       # Functions are just objects. If we don't call it,
       # it's just another thing to pass around.
       return stuff_printer
-    
+
     # Create and call a new function.
     s = make_stuff_printer("What stuff?")
-    
+
     # s is now a function, created by calling
     # make_stuff_printer.
     s()
-    
+
     # Let's create a bunch of them.
     printers = []
     for x in range(10):
       printers.append(make_stuff_printer("stuff %d" % x))
-    
+
     # Now we have a list of functions, all of which will
     # output something different.
     print printers
-    
+
     # Let's call them all and see if they remember the
     # state of the world when they were created.
     for p in printers:
@@ -3282,49 +3283,49 @@
   </div>
   <div name="mutable_closures">
     """Mutable Closure Variables
-    
+
     This is fairly advanced, and might take a little
     bit of head scratching to understand. Take your
     time, it's worth it. If you can understand what
     this code is doing, then you definitely understand
     scoping in Python.
-    
+
     Let's use our new smoothing generator to change
     all of our |(date, measurement)| pairs into
     |(date, measurement, smoothed)| triples.
-    
+
     Again, we will use a generator. Yes, they are that
     useful. You will therefore see them everywhere you
     look, including where there are no generators.
     They are like Python's hammer - now go find a
     nail.
-    
+
     A quick note: the test for monotonicity
     (increasing dates) has been folded into the
     clean_lines function. Take a look if you're
     interested: this works because dates of the form
     yyyy-mm-dd sort properly as strings.
-    
+
     Exercises
-    
+
     - Implement the smoothed_data function (see
       |TODO|) to accept an iterable over (date,
       measurement) pairs, and produce a (date,
       measurement, smoothed) triple for each one.
-    
+
     Note: this is not simple, because the smoothing
     generator only expects an iterable over raw data.
     We could just change parsed_measurements to emit
     triples, but this will provide good closure
     practice.
-    
+
     Hint: What happens to the old date and measurement
     values at each iteration through the loop? Can you
     use them outside?
     """
-    
+
     __doc__ = """Augmenting data smoother.
-    
+
     Here's the test to make pass:
     &gt;&gt;&gt; lines = '''
     ... 2012-01-01 7.6
@@ -3341,18 +3342,18 @@
     ['2012-01-04 00:00:00', '7.3', '7.5691']
     ['2012-01-05 00:00:00', '7.4', '7.55219']
     """
-    
+
     import datetime
-    
+
     def smoothed_data(pairs):
       """Accepts pairs of values and produces an iterator over triples."""
       last_values = [None, None]
-    
+
       def saved_values_iter():
         for d, w in pairs:
           last_values[:] = [d, w]  # Save current data in outer scope before yield.
           yield w
-    
+
       for smoothed in exponentially_smoothed(saved_values_iter()):
         # TODO:
         # Replace the yield below with a proper
@@ -3363,8 +3364,8 @@
         # saved_values_iterator, so we have to get
         # date and measurement from somewhere else...
         yield None, None, None
-    
-    
+
+
     def exponentially_smoothed(numbers):
       it = iter(numbers)
       smoothed = next(it)
@@ -3372,14 +3373,14 @@
       for n in it:
         smoothed += 0.1 * (n - smoothed)
         yield smoothed
-    
-    
+
+
     def parsed_measurements(lines):
       for line in clean_lines(lines):
         d, w = line.split()
         yield datetime.datetime.strptime(d, '%Y-%m-%d'), float(w)
-    
-    
+
+
     def clean_lines(lines):
       last_date = ""
       for i, line in enumerate(lines):
@@ -3392,41 +3393,41 @@
             "Non-incrementing (%d):\n\t%s\n\t%s" % (i, last_line, line))
         last_date = date
         yield line
-    
-    
+
+
     if __name__ == '__main__':
       if not _testmod().failed:
         print "Success!"
   </div>
   <div name="comprehensions">
     """Comprehensions
-    
+
     So far, we have (almost) always used |for| and
     |yield| to transform sequences. We'll keep doing
     that, but now in a slightly different, more
     compact form: **list comprehensions**.
-    
+
     Consider the |get2| function in the code. Given an
     iterable over sequences (like a list of tuples or
     strings), it produces an iterator over two
     specified pieces of each sequence, and it does it
     lazily, outputting and consuming only one element
     at a time. It's pretty easy to understand.
-    
+
     But, we can write this even more clearly and
     succinctly as a comprehension.
-    
+
     Comprehensions can get pretty complex (and if you
     find that yours are, just stop and use a loop -
     you'll thank yourself later), but the most common
     form is pretty clear and easy to grasp:
-    
+
       [new_item for item in iterable if condition]
-    
+
     This creates a list from items in |iterable|,
     optionally filtering elements out that don't pass
     the |if| condition.
-    
+
     There is a **generator comprehension** version of
     this, too, using |()| instead of |[]|, and lazily
     compues its output just like regular generators.
@@ -3436,28 +3437,28 @@
     |sorted| example in the code. Run it and see what
     it's doing.
     """
-    
+
     def get2(iterable, idx1, idx2):
       for val in iterable:
         yield val[idx1], val[idx2]
-    
+
     a = [('a','b','c'),
          ('d','e','f'),
          ('j','k','l'),
          ('g','h','i'),
          ('m','n','o')]
-    
+
     print "first two"
     print list(get2(a, 0, 1))
     print "first and last"
     print list(get2(a, 0, 2))
-    
+
     # List comprehension
     print "first two - comprehension"
     print [(x, y) for x, y, z in a]
     print "first and last - filtered"
     print [(x, z) for x, y, z in a if x &lt; 'j']
-    
+
     # Generator comprehension
     print "raw generator", ((x, y) for x, y, _ in a)
     # Look, Ma! No (additional) parentheses!
@@ -3465,16 +3466,16 @@
   </div>
   <div name="tracker_chart">
     """Make Chart Data
-    
+
     Let's do something fun, now. We'll use the (now
     deprecated, of course) Google Image Charts
     to generate a graph from our smoothed data.
-    
+
     http://developers.google.com/chart/image/docs/data_formats
-    
+
     To do this, we'll have our Python code produce a
     URL of a chart image.
-    
+
     Note that the code is shorter because date strings are
     actually fine for our needs, the smoothing
     implementation is folded into the parser, and some
@@ -3484,27 +3485,27 @@
     them are _bad exmaples_, in that they make clear
     code much less clear by trying to do too much on
     one line.
-    
+
     You are already equipped to understand all of it,
     but may need a moment to noodle it all precisely
     because these are examples of not-so-readable
     Python. Remember when you code, you are writing
     for a human audience as well as a computer.
-    
+
     To generate a chart URL, we need to provide values
     in a comma-separated list with some additional
     parameters. The basic parameters are provided
     in the main() function, as are the basic data
     lines.
-    
+
     Exercises
-    
+
     - Fill in the part marked TODO, then paste the URL
       into your browser.
     """
-    
+
     __doc__ = """Pass these tests:
-    
+
     &gt;&gt;&gt; data = '''
     ... 2012-01-01 8.5
     ... 2012-01-02 8.4
@@ -3516,7 +3517,7 @@
     &gt;&gt;&gt; make_chart_url_data(parsed_measurements(data))
     '8.50,8.40,8.10,8.30,8.00,7.90|8.50,8.49,8.45,8.44,8.39,8.34'
     """
-    
+
     def make_chart_url_data(data):
       """Create chart URL data from (date, measurement, smoothed) triples."""
       # TODO:
@@ -3539,8 +3540,8 @@
       # ','.join("{0:.2f}.format(x) for x in some_sequence)
       # This joins the sequence in the argument with the
       # string on which join is called.
-    
-    
+
+
     def parsed_measurements(lines):
       splits = ((d, float(w)) for d, w in (x.split() for x in clean_lines(lines)))
       d, w = next(splits)
@@ -3549,8 +3550,8 @@
       for d, w in splits:
         smoothed += 0.1 * (w - smoothed)
         yield d, w, smoothed
-    
-    
+
+
     def clean_lines(lines):
       lines = (y for y in (x.strip() for x in lines) if y and y[0] != '#')
       last_line = ""
@@ -3560,8 +3561,8 @@
             "Non-incrementing (%d):\n\t%s\n\t%s" % (i+1, last_line, line))
         last_line = line
         yield line
-    
-    
+
+
     if __name__ == '__main__':
       if not _testmod().failed:
         print "Success!"
@@ -3575,7 +3576,7 @@
   </div>
   <div name="regular_expressions">
     """Regular Expressions
-    
+
     Python, like most other languages these days, has
     **regular expression** facilities, but not built
     into the language. If you don't know what regular
@@ -3583,15 +3584,15 @@
     we'll only be covering the barest of the basics
     here to show how to use them in Python. More info
     can be found here:
-    
+
     http://docs.python.org/2/howto/regex.html
-    
+
     To use regular expressions, you import the |re| module.
     You then have access to all of its functions, like
     |search|, |match|, and |sub|. There are many others.
     Note that |match| almost _never_ does what people think
     it should, so ignore it: |search| always works fine.
-    
+
     You can also **compile** your regular expressions
     and use them pre-built. This can be more
     efficient, and it allows some of their parameters
@@ -3599,7 +3600,7 @@
     |IGNORECASE| instead of |(?i)|. It also makes it
     easier to remember parameter order for functions
     like |search| and |sub|.
-    
+
     Note that we introduced a new kind of string here,
     called a **raw string**. This is a string
     specified with |r| in front of it, e.g., |r"I'm
@@ -3609,14 +3610,14 @@
     adopt this practice as well.
     """
     import re
-    
+
     # When finding things using regular expressions, either
     # None or a match object is returned. Since None
     # evaluates to False in boolean contexts, you can do
     # things like this:
     if re.search(r"(?i)kittens", "Kittens on YouTube."):
       print "Kittens found!"
-    
+
     # Match objects also contain information about the
     # search, like which groups matched where, etc.
     # Here is an alternative approach that first compiles
@@ -3625,48 +3626,48 @@
     expr = re.compile(r"^kittens (.*)$", re.IGNORECASE)
     match = expr.search("Kittens on YouTube.")
     print match.groups()
-    
+
     # Note that we preface all pattern strings with the
     # letter 'r' because raw strings are best for regular
     # expression patterns, because they tend to be
     # backslash-heavy.
     print re.sub(r"(?i)(\s|.t)", "", "Kittens on YouTube")
-    
+
     # With date strings:
     m = re.search(r"^(\d{4})-(\d{2})-(\d{2})$", "2012-10-31")
     print m.groups()
-    
+
     # Just the year (groups are 1-based when accessed this
     # way):
     print m.group(1)
   </div>
   <div name="tracker_chart_labels">
     """Chart Date Labels
-    
+
     There are no labels on our chart, just lines.
     Let's add some labels. This will give us a chance
     to use regular expressions a bit to parse our date
     strings.
-    
+
     We'll just omit the year and month, placing only the
     day on the chart. We will also send a parameter asking
     the chart service to supply its own y-axis labels.
-    
+
     A regular expression that you might try is
     '^\d+-\d+-', which matches the first two date
     components in a string. If you |sub| that with the
     empty string, you'll be left with just the last
     part: the day.
-    
+
     The above expression works because |'\d'| matches
     any digit, |'+'| means "one or more of the
     preceding", and |'^'| matches the beginning of the
     string. The |'-'| just matches itself.
-    
+
     See http://docs.python.org/2/library/re.html for more details.
-    
+
     Exercises
-    
+
     - Fill in the bit marked |TODO|: get the day out
       of the each date string with a regular
       expression, then join all of the days together
@@ -3675,9 +3676,9 @@
       when you have it all right. Try running it first
       to get an idea of what's expected.
     """
-    
+
     __doc__ = """Make this test pass:
-    
+
     &gt;&gt;&gt; data = '''
     ... 2012-01-01 8.5
     ... 2012-01-02 8.4
@@ -3690,12 +3691,12 @@
     chd=t:8.50,8.40,8.10,8.30,8.00,7.90|8.50,8.49,8.45,8.44,8.39,8.34
     chxt=x,y&amp;chxl=0:|01|02|03|04|05|06|
     """
-    
+
     import re
-    
+
     def make_chart_url_data(data):
       """Create chart URL data from (date, measurements, smoothed) triples.
-    
+
       Returns:
         (data_string, label_string)
       """
@@ -3703,7 +3704,7 @@
       datastr = 'chd=t:' + (','.join('%.2f' % x for _, x, _ in data) +
                             '|' +
                             ','.join('%.2f' % x for _, _, x in data))
-    
+
       # TODO: Let's generate some labels!
       #
       # The label format is
@@ -3715,9 +3716,9 @@
       # of some kind, you can then use join to get the
       # | delimiters in there.
       labelstr = ''
-    
+
       return datastr, labelstr
-    
+
     def parsed_measurements(lines):
       splits = ((d, float(w)) for d, w in (x.split() for x in clean_lines(lines)))
       d, w = next(splits)
@@ -3726,7 +3727,7 @@
       for d, w in splits:
         smoothed += 0.1 * (w - smoothed)
         yield d, w, smoothed
-    
+
     def clean_lines(lines):
       lines = (y for y in (x.strip() for x in lines) if y and y[0] != '#')
       last_line = ""
@@ -3736,8 +3737,8 @@
             "Non-incrementing (%d):\n\t%s\n\t%s" % (i+1, last_line, line))
         last_line = line
         yield line
-    
-    
+
+
     if __name__ == '__main__':
       if not _testmod().failed:
         print "Success!"
@@ -3751,50 +3752,50 @@
   </div>
   <div name="tracker_histogram">
     """Histograms and Dictionaries
-    
+
     Suppose we want to know how often the measurement
     changed in one direction or another. Let's use a
     dictionary. Dictionaries are good for this because
     you don't have to know what keys they'll have
     before you start. With a list, you do (unless
     you're just appending).
-    
+
     We'll take the change in measurement as the key to the
     dictionary, and the value will be the number of times
     we've seen that change.
-    
+
     A couple of quick reminders: you will need to use
     |in| or |not in| to check for the key's existence
     before you can get its value to increment it. If
     it isn't there, you store it, otherwise you add
     one to it.
-    
+
     You will also want to use the |abs| builtin to compute
     the absolute value of things (since we don't care
     whether the difference is up or down for this
     application).
-    
+
     Exercises
-    
+
     - Your job is to fill in the implementation. Keys
       should be in |%.2f| (or |{:.2f}|) format, and
       values are the number of times we've seen the
       key (the absolute difference between adjacent
       measurements).
-    
+
     Bonus Work
-    
+
     - Look up |collections.defaultdict| and use that instead
       to save yourself some code.
     """
-    
+
     __doc__ = """Histogram example.
-    
+
     Measurements are just floating point values. Truncate
     differences to at most 2 decimal places. Use the
     absolute value of the difference between adjacent
     values.
-    
+
     &gt;&gt;&gt; h = histogram([8.0, 8.2, 7.8, 7.9, 8.0, 7.7, 7.9, 7.6])
     &gt;&gt;&gt; print "\\n".join("%r: %r" % (k, v) for k, v in sorted(h.iteritems()))
     '0.10': 2
@@ -3802,7 +3803,7 @@
     '0.30': 2
     '0.40': 1
     """
-    
+
     def histogram(data):
       """Given an iterable over measurements, produce a difference histogram."""
       # TODO: Implement this, returning a dictionary
@@ -3810,28 +3811,28 @@
       # difference between adjacent measurements. The
       # strings should be formatted {:.2f} as in the
       # doctest above.
-    
-    
+
+
     if __name__ == '__main__':
       if not _testmod().failed:
         print "Success!"
   </div>
   <div name="tracker_sorting">
     """Sorting, Keys, and Lambda
-    
+
     The histogram dictionary is nice, but it is not sorted
     (well, it is in the doctest). Let's talk about sorting.
-    
+
     All lists have a |sort| method. If you call it, e.g.,
-    
+
       mylist.sort()
-    
+
     It will sort the list in place.
-    
+
     You can also use the builtin |sorted| function, which
     takes any sequence (not just a list) and produces a new
     sorted sequence from it. The code has some examples.
-    
+
     Note: |sort| and |sorted| accept several optional
     parameters. One of the most interesting is |key|. If
     you create a function that produces a key given one of
@@ -3839,17 +3840,17 @@
     determine order instead of the value itself. For
     example, to sort a list of numbers backwards, the
     key might be described as "take the negative".
-    
+
     In our example, we specify that function using a
     |lambda|. Lambdas are basically one-line functions
     that accept some arguments and evaluate exactly
     one expression, which they return, e.g.:
-    
+
       myfunc = lambda x: x+10
       myfunc(2) == 12  # True
     """
     import collections
-    
+
     def histogram(data):
       # When an item is not present, defaultdict uses
       # the callable you pass it to create and insert
@@ -3861,17 +3862,17 @@
         hist["%.2f" % abs(val-last)] += 1
         last = val
       return hist
-    
-    
+
+
     hist = histogram([10, 10.2, 10.4, 10.2, 10.1, 10.0, 9.5, 9.8, 8.7])
     print "Raw:"
     print hist
-    
+
     # Now try sorting it.
     print "Sorted:"
     for k, v in sorted(hist.items()):
       print "%s: %d" % (k, v)
-    
+
     # Now try sorting it with a weird key (string reversal):
     print "Weirdly sorted:"
     for k, v in sorted(hist.items(), key=lambda x: x[0][::-1]):
@@ -3879,29 +3880,29 @@
   </div>
   <div name="argv_flags">
     """Command-line arguments and flags.
-    
+
     This particular part might require you to use the
     command line to really try it out, but we'll fake
     it a bit for you to give you an idea of what's
     what.
-    
+
     When invoking your programs from the command line,
     you can accept arguments and do things with them.
     For example, you might want your tracker to accept
     different filenames to generate chart data for
     different cats.
-    
+
     To do this, you access |sys.argv|. For optional
     parameters, you can (and should) also use the
     |argparse| module as shown. It's fairly
     straightforward to set up, and then you can just
     access things by name. Documentation can be found
     here:
-    
+
     http://docs.python.org/2/library/argparse.html#module-argparse
-    
+
     Tracker Concluded
-    
+
     Now you can really go write that tracker program,
     and we'll put this particular project concept
     behind us in favor of moving on to more advanced
@@ -3912,11 +3913,11 @@
     try writing some small programs. Or, you could
     just plunge ahead. There's a lot more fun to be had.
     """
-    
+
     import argparse
-    
+
     PRETEND_COMMANDLINE = './tracker.py input.txt --dryrun -o output.url'
-    
+
     def main():
       # Describe what arguments we understand.
       parser = argparse.ArgumentParser(description="Track Kitty's Progress")
@@ -3930,13 +3931,13 @@
       # called without arguments it imports sys and
       # uses sys.argv.
       args = parser.parse_args()
-    
+
       print args
       print args.output
       print args.input_file
       print args.dryrun
-    
-    
+
+
     # Pay no attention to the man behind the curtain.
     if __name__ == '__main__':
       # Set up a fake set of arguments, pretending
@@ -3947,11 +3948,11 @@
   </div>
   <div name="classes_intro">
     """Classes are Types
-    
+
     Let's move on to **classes**. We've been using
     them already without directly talking about it, so
     let's get down to what they really are.
-    
+
     In general, you can think of a class as a
     **type**. This is, of course, merely a useful
     fiction because it hides subtlety, but it is still
@@ -3959,12 +3960,12 @@
     allow you to create a bunch of things that are the
     same _kind_ or _type_ of thing. We'll learn how to
     make our own types in the coming slides.
-    
+
     Calling a class makes a new **instance** of it.
     If you think of a class as a blueprint for, say, a
     house, an instance is the actual house you build
     by following the plan.
-    
+
     Some basic properties of classes are demonstrated
     in the example code by looking at |ValueError|,
     which is a class we've seen and used before.
@@ -3975,45 +3976,45 @@
     _all_ classes are callable: calling one creates an
     instance.
     """
-    
+
     # What is this type of thing anyway?
     print "What's a ValueError class?"
     print " ", repr(ValueError)
-    
+
     # Make a new instance of ValueError by calling it.
     ex = ValueError("My super informative error message")
-    
+
     # What is this?
     # Note how "repr" in this case shows you how to
     # make one, which can be really useful.
     print "What's a ValueError instance?"
     print " ", repr(ex)
-    
+
     print "What (non-special) stuff is inside of it?"
     print "  " + "\n  ".join(x for x in dir(ex) if x[:2] != '__')
-    
+
     # Now, there are various ways of getting at the
     # message:
     print "args:   \t", ex.args
     print "message:\t", ex.message
     print "str:    \t", str(ex)
-    
+
     # But "str" just calls the __str__ method:
     print "__str__:\t", ex.__str__()
-    
+
     # And since it has a __str__ method, print can use
     # it directly:
     print "Bare:   \t", ex
-    
+
   </div>
   <div name="class_keyword">
     """What is a Class, Really?
-    
+
     Everything that is a thing in Python has a class
     behind it. That class is like a description,
     telling you what its instances are _like_, what
     they _contain_, and what they can _do_.
-    
+
     To create your own sort of class in Python, you
     use a |class| declaration as shown in the sample
     code. The declaration includes the name of your
@@ -4021,9 +4022,9 @@
     **inherit** from. In Python 2, this is often just
     |object| (in Python 3 you can omit it to inherit
     from |object| by default):
-    
+
       class MyClassName(object):
-    
+
     The body of the class, like in other Python
     scopes, is indented below the declaration. Take a
     look at the sample code. There we define three
@@ -4032,34 +4033,34 @@
     they start and end with double underscores.
     Special methods are used by Python to do lots of
     things.
-    
+
     The |__init__| method, for example, is called when
     an instance is created. You can see this when we
     create |new_shoe|: when you call a class, Python
     creates a boring empty instance (with methods),
     then passes that to |__init__| so you can fill it
     in with more interesting stuff.
-    
+
     Similarly, when you call |str| or |repr| on an
     instance, Python will try to call its
     corresponding special methods. Take a look and see
     if you can tell how it works.
     """
-    
+
     class Shoe(object):
       """Class docstring - tell what this *is*."""
-    
+
       def __init__(self, color, lace_holes, us_size, weight_oz):
         """Make a new shoe with the given data."""
         self.color = color
         self.lace_holes = lace_holes
         self.us_size = us_size
         self.weight_oz = weight_oz
-    
+
       def __repr__(self):
         return "Shoe({!r}, {!r}, {!r}, {!r})".format(
           self.color, self.lace_holes, self.us_size, self.weight_oz)
-    
+
       def __str__(self):
         # Note how we do *implicit* string
         # concatenation here: if two string constants
@@ -4071,8 +4072,8 @@
                   color=self.color,
                   holes=self.lace_holes,
                   weight=self.weight_oz))
-    
-    
+
+
     # "Shoe" is a class. Let's create a specific
     # instance of it and do stuff with it:
     new_shoe = Shoe("red", 10, "8.5 children's", 6)
@@ -4081,10 +4082,10 @@
   </div>
   <div name="classes_special">
     """More on Special Methods
-    
+
     We did some work with the |Shoe| class previously.
     Let's explore that some more.
-    
+
     Every method of a class takes |self| as its first
     parameter. You don't have to pass it in: Python
     does that for you. You can actually name it
@@ -4092,7 +4093,7 @@
     convention is to call it |self|, so you should,
     as well. But, more on that later. For now, let's talk
     about special methods.
-    
+
     There are a *lot* of special methods you can write
     to change the behavior of your class. For example,
     if you want your class instances to be _iterable_,
@@ -4105,36 +4106,36 @@
     sequences (e.g., |__nonzero__| and |__len__|), and
     even functions (by defining |__call__|). A full
     list is here:
-    
+
     http://docs.python.org/2/reference/datamodel.html#special-method-names
-    
+
     Exercises
-    
+
     - Make |Shoe| iterable by adding an |__iter__|
       method that emits each shoe characteristic, one
       at a time.  Print it in a |for| loop. *Hint:* if
       |__iter__| is a generator, calling it will
       return an iterator.
     """
-    
+
     class Shoe(object):
       """Class docstring - tell what this *is*."""
-    
+
       def __init__(self, color, lace_holes, us_size, weight_oz):
         """Make a new shoe with the given data."""
         self.color = color
         self.lace_holes = lace_holes
         self.us_size = us_size
         self.weight_oz = weight_oz
-    
+
       def __str__(self):
         return "Shoe({!r}, {!r}, {!r}, {!r})".format(
           self.color, self.lace_holes, self.us_size, self.weight_oz)
-    
+
       # We can set one method to be equal to another.
       # TODO: try removing this and see what happens.
       __repr__ = __str__
-    
+
     # "Shoe" is a class. Let's create a specific
     # instance of it and do stuff with it:
     new_shoe = Shoe("red", 10, "8.5 children's", 6)
@@ -4143,154 +4144,154 @@
   </div>
   <div name="classes_self">
     """More on Self
-    
+
     When you define a class, you can put data and
     methods into it. We have seen that you define
     methods by indenting function declarations below
     the class declaration, and that they are required
     to accept |self| as their first parameter.
-    
+
     But what is |self|, exactly? The short version is
     this: |self| is the instance. So, when you do
     something like this
-    
+
       s = Shoe('blue', 4, '6w', 12)
       s.change_color('green')
-    
+
     It's the same as if you had done this (try it!)
-    
+
       Shoe.change_color(s, 'green')
-    
+
     The |self| in |change_color| is whatever |s| is
     holding. It's the instance of |Shoe| that we just
     created: the thing on the left of the dot.
-    
+
     As we've seen, the way that you create variables
     inside of an instance is just like we do in all
     other cases in Python: we assign them. These
     variables do not exist before they are assigned,
     so in |__init__| you'll typically see a lot of
     variable assignments just to set things up.
-    
+
     Note that |self| is only automatically passed in
     if you call the function on an **instance**. If
     you call it on a **class**, it is not.
     """
-    
+
     class Shoe(object):
       """Class docstring - tell what this *is*."""
-    
+
       def __init__(self, color, lace_holes, us_size, weight_oz):
         """Make a new shoe with the given data."""
         self.color = color
         self.lace_holes = lace_holes
         self.us_size = us_size
         self.weight_oz = weight_oz
-    
+
       def __str__(self):
         return "Shoe({!r}, {!r}, {!r}, {!r})".format(
           self.color, self.lace_holes, self.us_size, self.weight_oz)
-    
+
       def change_color(self, new_color):
         self.color = new_color
-    
+
     s = Shoe('blue', 4, '6w', 12)
     print s
-    
+
     s.change_color('red')
     print s
   </div>
   <div name="classes_dict">
     """Namespace Dictionaries
-    
+
     When |__init__| is called, it is passed a fresh
     instance of the class, ready to have new data
     added to it. But what is this instance, really?
-    
+
     In a nutshell, it's a _namespace_. Does that sound
     familiar? We've seen namespaces before, when we
     have _imported modules_. A module is one kind of
     namespace in Python, a class is another, and an
     instance is still another.
-    
+
     In Python, namespaces are (almost) always
     implemented as _dictionaries_. The underlying
     dictionary that contains all of their data is
     available in the |__dict__| member of the
     namespace. Head over the to the code window and
     see what happens when you run it.
-    
+
     Something strange has happened here, though. We
     can print |instance.SomeVariable|, so we might
     expect it to be in the instance dictionary, but it
     seems to be missing.
-    
+
     It isn't there, but it *is* in the _class
     dictionary_. Python, when you try to access a
     member of an instance, will _search_ for it,
     starting at the instance dictionary, then if it
     isn't there, in the class dictionary.
-    
+
     Exercise
-    
+
     - Try changing something in the instance
       dictionary by assigning to, e.g.,
       |instance.__dict__['random']|. Now try printing
       |instance.random|. What happens?
     """
-    
+
     # Three different kinds of namespaces:
-    
+
     import string
-    
+
     class MyTestClass(object):
       """My class docstring."""
       SomeVariable = 'hi there'
       def __init__(self, arg):
         self.arg = arg
-    
+
     instance = MyTestClass('some argument')
-    
+
     # Note that instances can access class variables
     # directly, even if they aren't set in __init__.
     print instance.arg
     print instance.SomeVariable
-    
+
     # Let's take a look inside of these, now:
-    
+
     print "INSTANCE:------------------------------"
     print "\t\n".join("{0}: {1!r}".format(k, v)
                     for k, v in instance.__dict__.iteritems())
-    
+
     print "CLASS:---------------------------------"
     print "\t\n".join("{0}: {1!r}".format(k, v)
                     for k, v in MyTestClass.__dict__.iteritems())
-    
+
     print "MODULE:--------------------------------"
     print "\t\n".join("{0}: {1!r}".format(k, v)
                     for k, v in string.__dict__.iteritems())
-    
+
   </div>
   <div name="what_next">
     """What Next?
-    
+
     You have covered all of the really necessary basic
     parts of Python, and that is a lot. Well done! So,
     what do you do next? Depending on how comforable
     you are with this material, you may want to go
     back through the slides one more time, just to
     cement things in your mind.
-    
+
     Of course, another next step could be to explore
     the more detailed official online Python tutorial:
-    
+
     http://docs.python.org/2/tutorial/
-    
+
     Of particular interest might be a tour of Python's
     standard library:
-    
+
     http://docs.python.org/2/tutorial/stdlib.html
-    
+
     Meanwhile, there's a fun little program in the
     code window that you are welcome to play with at
     your leisure. There are a couple of new concepts
@@ -4298,53 +4299,53 @@
     starting with |@| that transform one function into
     another), so feel free to look them up if you're
     curious.
-    
+
     Other than the decorators, though (of which only
     |@classmethod| and |@staticmethod| are used), you
     are, with a little time and head-scratching,
     completely equipped to understand what is
     happening here!
-    
+
     Welcome to Python!
     """
-    
+
     __doc__ = """Sudoku solver, inspired by Peter Norvig.
-    
+
     http://norvig.com/sudoku.html
     """
-    
+
     import random
     import re
     from math import sqrt
-    
+
     __author__ = "Chris Monson &lt;shiblon@gmail.com&gt;"
-    
+
     def main():
       board = SudokuBoard.fromstring(
       """
         .43   ...   62.
         7..   4.3   ..8
         6..   2.8   ..7
-    
+
         .75   ...   34.
         ...   ...   ...
         .98   ...   57.
-    
+
         9..   5.7   ..3
         1..   6.2   ..5
         .87   ...   26.
       """)
-    
+
       print "Solution:"
       print board.search().pretty_str()
-    
-    
+
+
     class SudokuBoard(object):
       """Defines a Sudoku board, so we can solve one."""
-    
+
       def __init__(self):
         """Creates an empty sudoku board, with all squares unconstrained.
-    
+
         All boards are assumed to be standard 9x9
         boards.  We could do better, but we don't
         bother for this class.
@@ -4356,24 +4357,24 @@
         cols = self.cols = range(self.size)
         self.values = dict(((r,c), numbers) for r in rows for c in cols)
         self.number_strings = '.' + ''.join(str(x) for x in self.numbers)
-    
+
       @staticmethod
       def normalize_puzzle_string(string):
         """Remove superfluous fluff from a sudoku string and prepare it for import
-    
+
         &gt;&gt;&gt; SudokuBoard.normalize_puzzle_string('..-+5..__4.52230.30')
         '..5....4.5223..3.'
         """
         string = re.sub(r"[\s|+-]+", "", string)
         string = re.sub(r"[0_]", ".", string)
         return string
-    
+
       @classmethod
       def fromstring(cls, string):
         """Accepts a simple sudoku puzzle string in row-major format.
-    
+
         [\s-_+] are all ignored, so it can be formatted in ascii art
-    
+
         args:
           string: a string representing a puzzle
         """
@@ -4385,26 +4386,26 @@
         # TODO: remove this constraint for larger puzzles:
         if square_size != 3:
           raise ValueError("Code currently only supports 9x9 puzzles")
-    
+
         self = cls()
         # Fill in the cells at the places that are specified in the string
         for coords, char in zip(self.cells(), string):
           if char != '.':
             self.assign_value(coords, int(char))
-    
+
         return self
-    
+
       def copy(self):
         """Return a copy of this puzzle"""
         new = self.__class__()
         new.values = self.values.copy()
         return new
-    
+
       def search(self):
         """Searches the puzzle for a solution, returning a *new* puzzle.
-    
+
         Returns False if it fails.
-    
+
         This method always searches for the most constrained cell with no fewer
         than two values.  Then it tries one.  Calls eliminate_value, assign_value,
         and itself recursively.
@@ -4418,10 +4419,10 @@
             return False
           elif best_coords is None or size &lt; len(self[best_coords]):
             best_coords = coords
-    
+
         if best_coords is None:
           return self
-    
+
         possible_values = list(self[best_coords])
         random.shuffle(possible_values)
         for val in possible_values:
@@ -4430,12 +4431,12 @@
             result = new_puzzle.search()
             if result:
               return result
-    
+
         return False
-    
+
       def eliminate_value(self, coords, killval):
         """Removes killval from cell at coords and propagates constraints in place.
-    
+
         Propagates constraints, in the following way:
           - If the value is not in the specified cell, do nothing.
           - If the elimination results in a singleton, recursively eliminate that
@@ -4447,22 +4448,22 @@
             eliminate '3' from all cells in that row.
           - If at any time the number of values in a cell goes to zero, this is not
             a valid solution, so we return False.
-    
+
         args:
           coords: (row, col) of cell to adjust
           killval: the value to be removed from this cell
-    
+
         returns:
           False if the elimination results in an invalid puzzle, else True.
         """
         if killval not in self[coords]:
           return True
-    
+
         # Take the value out
         self[coords] = tuple(x for x in self[coords] if x != killval)
-    
+
         cellvals = self[coords]
-    
+
         if len(cellvals) == 0:
           return False
         elif len(cellvals) == 1:
@@ -4471,7 +4472,7 @@
           for peer in self.peers_for_cell(coords):
             if not self.eliminate_value(peer, assigned_val):
               return False
-    
+
         # Now check whether the eliminated value is uniquely found in any cell in
         # any unit.
         for unit in self.units_for_cell(coords):
@@ -4482,10 +4483,10 @@
             if not self.assign_value(cells_with_killval[0], killval):
               return False
         return True
-    
+
       def assign_value(self, coords, goodval):
         """Assigns a value to cell at coords and propagates constraints in place.
-    
+
         Implemented using eliminate_value.
         """
         cellvals = self[coords]
@@ -4494,31 +4495,31 @@
             if not self.eliminate_value(coords, v):
               return False
         return True
-    
+
       def __getitem__(self, key):
         return self.values[key]
-    
+
       def __setitem__(self, key, val):
         self.values[key] = val
-    
+
       def __len__(self):
         return len(self.values)
-    
+
       def cells(self):
         """Returns a row-major iterator over all coordinates in the puzzle
-    
+
         &gt;&gt;&gt; list(SudokuBoard().cells())[3:12]
         [(0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (1, 0), (1, 1), (1, 2)]
         """
         return ((row, col) for row in self.rows for col in self.cols)
-    
+
       def row_for_cell(self, coords, include_self=False):
         """Iterator over all cells in this cell's row
-    
+
         args:
           coords: (row, col) of this cell
           include_self: If True, includes given coordinates in output
-    
+
         &gt;&gt;&gt; s = SudokuBoard()
         &gt;&gt;&gt; list(c for c in s.row_for_cell((5,2)))
         [(5, 0), (5, 1), (5, 3), (5, 4), (5, 5), (5, 6), (5, 7), (5, 8)]
@@ -4527,17 +4528,17 @@
         """
         row, col = coords
         return ((row, c) for c in self.cols if include_self or c != col)
-    
+
       def col_for_cell(self, coords, include_self=False):
         """Iterator over cells in the column containing the given coordinates
-    
+
         args:
           coords: (row, col) of the cell whose column will be returned
           include_self: If True, includes given coordinates in output
-    
+
         returns:
           iterator over (row, col) tuples for this column
-    
+
         &gt;&gt;&gt; s = SudokuBoard()
         &gt;&gt;&gt; list(c for c in s.col_for_cell((3,5)))
         [(0, 5), (1, 5), (2, 5), (4, 5), (5, 5), (6, 5), (7, 5), (8, 5)]
@@ -4546,12 +4547,12 @@
         """
         row, col = coords
         return ((r, col) for r in self.rows if include_self or r != row)
-    
+
       def square_bounds(self, coords):
         """Returns the corners of the square containing this cell.
-    
+
         The "upper left" is inclusive, the "lower right" is exclusive
-    
+
         &gt;&gt;&gt; SudokuBoard().square_bounds((4, 3))
         ((3, 3), (6, 6))
         &gt;&gt;&gt; SudokuBoard().square_bounds((2, 6))
@@ -4564,20 +4565,20 @@
         r_to = r_from + self.square_size
         c_from = col - (col % self.square_size)
         c_to = c_from + self.square_size
-    
+
         return (r_from, c_from), (r_to, c_to)
-    
+
       def square_for_cell(self, coords, include_self=False):
         """Iterator over cells in the square containing the given coordinates
-    
+
         args:
           coords: (row, col) of cell in square
           include_self (False): If true, the given coordinates are included in the
             iteration
-    
+
         returns:
           iterator over (row, col) coordinate tuples
-    
+
         &gt;&gt;&gt; s = SudokuBoard()
         &gt;&gt;&gt; list(c for c in s.square_for_cell((1, 1)))
         [(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]
@@ -4589,20 +4590,20 @@
           for c in range(c_from, c_to):
             if (r, c) != coords or include_self:
               yield r, c
-    
+
       def units_for_cell(self, coords, include_self=False):
         """Iterator over row, column, and square units containing the given cell.
-    
+
         args:
           coords: (row, col) of the cells whose units we wish to obtain
           include_self: If true, includes this cell in the output
-    
+
         returns:
           iterator over iterators, in the following order:
             row
             col
             square
-    
+
         &gt;&gt;&gt; s = SudokuBoard()
         &gt;&gt;&gt; for unit in s.units_for_cell((1,2)):
         ...   list(unit)
@@ -4621,12 +4622,12 @@
         yield self.col_for_cell(coords, include_self=include_self)
         # Output the square iterator
         yield self.square_for_cell(coords, include_self=include_self)
-    
+
       def peers_for_cell(self, coords, include_self=False):
         """Iterator over coordinates of all peers of this cell.
-    
+
         All values show up exactly once.
-    
+
         &gt;&gt;&gt; peers = list(SudokuBoard().peers_for_cell((5, 8)))
         &gt;&gt;&gt; peers[:8]
         [(5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6), (5, 7)]
@@ -4642,10 +4643,10 @@
         for c in self.square_for_cell(coords, include_self=False):
           if c[0] != coords[0] and c[1] != coords[1]:
             yield c
-    
+
       def simple_cell_string(self, values):
         """Returns the simple string value of this cell, '.' for not fully assigned
-    
+
         &gt;&gt;&gt; s = SudokuBoard()
         &gt;&gt;&gt; s.simple_cell_string((1,2,3))
         '.'
@@ -4660,10 +4661,10 @@
           return self.number_strings[values[0]]
         else:
           return '.'
-    
+
       def simple_cell_strings(self):
         """Row-major iterator over cell string values.
-    
+
         &gt;&gt;&gt; s = SudokuBoard()
         &gt;&gt;&gt; len(tuple(s.simple_cell_strings()))
         81
@@ -4674,10 +4675,10 @@
         ('.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '3', '.')
         """
         return (self.simple_cell_string(self[r, c]) for r, c in self.cells())
-    
+
       def pretty_str(self):
         """Produce a nice-looking representation of the board.
-    
+
         Only shows *fully constrained* values. Cells
         that are not fully defined show up as '.', as
         in simple_cell_strings.
@@ -4694,22 +4695,22 @@
             if (r + 1) % self.square_size == 0:
               yield ''
         return '\n'.join(row_at_a_time())
-    
+
       def __str__(self):
         def format_cell(values):
           return "".join(self.number_strings[(v in values) * v]
                          for v in self.numbers)
-    
+
         def columns(row):
           return (format_cell(self[row, c]) for c in self.cols)
-    
+
         return "\n".join(" ".join(columns(r)) for r in self.rows)
-    
+
       def __repr__(self):
         return "%s.fromstring('%s')" % (
           self.__class__.__name__,
           "".join(self.simple_cell_strings()))
-    
+
     if __name__ == "__main__":
       main()
       #_testmod()

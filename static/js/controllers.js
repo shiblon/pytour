@@ -187,48 +187,62 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   };
 
   $scope._addText = function(text, elementClass) {
-    var output = document.getElementById("output");
+    var output = $('#output');
     var scrolled = output.scrollHeight - output.clientHeight - output.scrollTop;
     var scrollDown = scrolled < 12;
-    var pre = document.createElement("pre");
-    pre.className = elementClass;
-    pre.appendChild(document.createTextNode(text));
-    output.appendChild(pre);
+    $('#output').append($('<pre>')
+                        .addClass(elementClass)
+                        .addClass('output-entry')
+                        .text(text));
     if (scrollDown) {
       output.scrollTop = output.scrollHeight - output.clientHeight;
     }
   };
 
-  // Creates a function that accepts code and runs it on the server.
-  function makeRunOnServer() {
-    return function(code) {
-      $scope.clearOutput();
-      $http.post("/runcode", code).success(function(data) {
-        $scope.addOutputText(data.stdout);
-        $scope.addErrorText(data.stderr);
-      });
-    };
-  }
+  $scope.clearOutput = function() {
+    $('#output .output-entry').remove();
+  };
+
+  $scope.firstRun = true;
 
   // Creates a function that runs code on PyPy.js.
   // onLoaded is called when the vm has finished initializing.
-  function makeRunOnPyPyJS(onLoaded) {
+  function makeRunOnPyPyJS() {
+    function started() {
+      $scope.codeRunning = true;
+      console.log("running code");
+      $scope.$apply();
+    }
+    function done() {
+      $scope.codeRunning = false;
+      $scope.firstRun = false;
+      console.log("done");
+      $scope.$apply();
+    }
+    function loading() {
+      $scope.vmLoaded = false;
+    }
+    function loaded() {
+      $scope.vmLoaded = true;
+      console.log("Python loaded");
+    }
+
+    loading();
+
     // Initialize PyPy.js
     var vm = new PyPyJS({
       stdout: $scope.addOutputText,
       stderr: $scope.addErrorText,
       autoLoadModules: false,
     });
-    vm.ready.then(onLoaded);
-    return function(code) {
+    function run(code) {
       if (!$scope.vmLoaded) {
-        console.log("vm not ready - ignoring request to run code")
+        console.log("Python not ready - ignoring request to run code")
         return;
       }
       $scope.clearOutput();
-      $scope.codeRunning = true;
-      vm.loadModuleData("contextlib", "argparse")
-      .then(function() {
+      started();
+      window.setTimeout(function() {
         try {
           // Clean up the global namespace, get the help function, and create a doctest.
           vm.exec($scope._preamble)
@@ -236,19 +250,26 @@ function CodeCtrl($scope, $http, $location, $timeout) {
             return vm.exec(code)
             .catch(function(err) {
               $scope.addErrorText(err.trace);
-              $scope.codeRunning = false;
             })
-            .then(function() {
-              $scope.codeRunning = false;
-            });
-          });
+            .then(done);
+          })
+          .catch(function(err) {
+            $scope.addErrorText(err.trace);
+          })
+          .then(done);
         } catch (err) {
           console.log(err);
-          $scope.codeRunning = false;
           $scope.addErrorText("Internal Error: " + $scope.prettyError(err));
+          done();
         }
-      });
-    };
+      }, 100);
+    }
+    vm.ready.then(function() {
+      loaded();
+      // Prime the VM by running something useful.
+      vm.loadModuleData("contextlib", "argparse");
+    });
+    return run;
   }
 
   // prettyError is used to make javascript exceptions easier on the eyes.
@@ -276,18 +297,24 @@ function CodeCtrl($scope, $http, $location, $timeout) {
 
   // If PyPyJS loaded, we can use that. Otherwise, run this thing on the server.
   (function(document, window, undefined) {
+    $scope.runCode = function() {
+      console.log("Can't run code yet - not wired up.");
+    };
     $scope.vmLoaded = false;
     $scope.coderunning = false;
 
     if (window.PyPyJS !== undefined) {
-      console.log("using client-side PyPy.js implementation");
-      $scope.runCode = makeRunOnPyPyJS(function() {
-        console.log("vm loaded");
-        $scope.vmLoaded = true;
-      });
+      console.log("Using client-side PyPy.js implementation");
+      $scope.runCode = makeRunOnPyPyJS();
     } else {
-      console.log("using server-side Python implementation");
-      $scope.runCode = makeRunOnServer();
+      console.log("Using server-side Python implementation");
+      $scope.runCode = function(code) {
+        $scope.clearOutput();
+        $http.post("/runcode", code).success(function(data) {
+          $scope.addOutputText(data.stdout);
+          $scope.addErrorText(data.stderr);
+        });
+      };
       $scope.vmLoaded = true;
     }
   }(document, window))
@@ -301,13 +328,6 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   // you're in the code window it causes a newline to be
   // inserted, too.
   $scope.doNothing = function(e) {}
-
-  $scope.clearOutput = function() {
-    var output = document.getElementById("output");
-    while (output.lastChild) {
-      output.removeChild(output.lastChild);
-    }
-  }
 
   $scope.clearCode = function() {
     $scope.code = "";
