@@ -101,7 +101,8 @@ def main():
   before = html_lines[:start_line] + [html_lines[start_line][:start_offset]]
   after = [html_lines[end_line][end_offset:]] + html_lines[end_line+1:]
 
-  new_content = '\n'.join(before + list('  ' + x for x in content_lines(tutorials_path)) + after)
+  new_content = '\n'.join(before + list(('  ' + x).rstrip()
+                                        for x in content_lines(tutorials_path)) + after)
   with open(index_path, 'wt') as f:
     print >>f, new_content
 

@@ -137,7 +137,7 @@
           elif state is Command:
             if ls.startswith('&gt;&gt;&gt; '):
               indentation = line[:len(line) - len(ls)]
-              commands.append('\n'.join(collected_command))
+              commands.append(collected_command)
               results.append(None)
               collected_command = [ls[4:].rstrip('\r\n')]
               collected_result = []
@@ -146,15 +146,15 @@
                 raise ValueError("invalid command contination indentation: %r" % line)
               collected_command.append(ls[4:].rstrip('\r\n'))
             elif not ls:
-              commands.append('\n'.join(collected_command))
-              results.append(collected_result)
+              commands.append(collected_command)
+              results.append(None)
               collected_command = []
               collected_result = []
               state = None
             else:
               if not line.startswith(indentation):
                 raise ValueError("invalid result indentation: %v", line)
-              commands.append('\n'.join(collected_command))
+              commands.append(collected_command)
               collected_command = []
               collected_result = [ls.rstrip('\r\n')]
               state = Result
@@ -200,34 +200,76 @@
         finally:
           self.sys.stdout, self.sys.stderr = old_out, old_err
 
+      def __format_exc(self):
+        def extract_tb(tb, limit=None):
+          def getline(filename, lineno, *args):
+            if filename.startswith('&lt;'):
+              return None
+            return open(filename).readlines()[lineno-1]
+          frame_info = []
+          n = 0
+          while tb is not None and (limit is None or n &lt; limit):
+            f = tb.tb_frame
+            lineno = tb.tb_lineno
+            co = f.f_code
+            filename = co.co_filename
+            name = co.co_name
+            line = getline(filename, lineno, f.f_globals)
+            if line: line = line.strip()
+            else: line = None
+            frame_info.append((filename, lineno, name, line))
+            tb = tb.tb_next
+            n = n+1
+          return frame_info
+
+        def format_list(entries):
+          formatted = []
+          for filename, lineno, name, line in entries:
+            item = '  File {!r}, line {}, in {}\n'.format(filename, lineno, name)
+            if line:
+              item += '    {}\n'.format(line.strip())
+            formatted.append(item)
+          return formatted
+
+        t, e, tb = self.sys.exc_info()
+        lastline = '{}: {}'.format(t.__name__, e.message)
+        entries = ["Traceback (most recent call last):\n"] + format_list(extract_tb(tb)) + [lastline]
+        return ''.join(entries)
+
       def __run_test(self, test, environ={}):
         command = test['command']
         expected = test['results']
-        result = ""
-        try:
-          result = eval(command, environ)
-        except SyntaxError, synerr:
-          with self.__redirect_stdio() as (out, err):
+        with self.__redirect_stdio() as (out, err):
+          cmdstr = '\n'.join(command)
+          try:
+            result = eval(cmdstr, environ)
+            if result is not None:
+              print repr(result)
+          except SyntaxError, synerr:
             try:
-              exec command in environ
-            except Exception, e:
-              print e
+              exec cmdstr in environ
+            except Exception:
+              print &gt;&gt;err, self.__format_exc()
+          except Exception:
+            print &gt;&gt;err, self.__format_exc()
+          finally:
             result = out.getvalue() + err.getvalue()
 
         if expected is None:
           return True
 
-        if result is None and expected is not None:
+        def format_lines(command_lines):
+          return '\n'.join('\t{}'.format(l) for l in command_lines)
+
+        if expected and not result:
           print "Failed example:"
-          print "\t%s" % command
+          print format_lines(command)
           print "Expected:"
-          for line in expected:
-            print "\t%s" % line
+          print format_lines(expected)
           print "Got None"
           return False
 
         # Now that we have tested for None, we can turn it into a string.
-        result = repr(result)
         if result.endswith('\n'):
           result = result[:-1]
 
@@ -244,38 +286,32 @@
         if len(result) != len(expanded_expected):
           if len(result) == 0:
             print "Failed example:"
-            print "\t%s" % command
+            print format_lines(command)
             print "Expected:"
-            for line in expected:
-              print "\t%s" % line
+            print format_lines(expected)
             print "Got nothing"
           elif len(expected) == 0:
             print "Failed example:"
-            print "\t%s" % command
+            print format_lines(command)
             print "Expected nothing"
             print "Got:"
-            for line in result:
-              print "\t%s" % line
+            print format_lines(result)
           else:
             print "Failed example:"
-            print "\t%s" % command
+            print format_lines(command)
             print "Expected:"
-            for line in expected:
-              print "\t%s" % line
+            print format_lines(expected)
             print "Got:"
-            for line in result:
-              print "\t%s" % line
+            print format_lines(result)
         else:
           for r, e in zip(result, expanded_expected):
             if r != e and e != '...':
               print "Failed example:"
-              print "\t%s" % command
+              print format_lines(command)
               print "Expected:"
-              for line in expected:
-                print "\t%s" % line
+              print format_lines(expected)
               print "Got:"
-              for line in result:
-                print "\t%s" % line
+              print format_lines(result)
               break
           else:
             failed = False
@@ -2949,8 +2985,8 @@
 
     &gt;&gt;&gt; for d, w in parsed_measurements(lines):
     ...   print type(d), d, type(w), w
-    &lt;type 'datetime.datetime'&gt; 2012-10-10 00:00:00 &lt;type 'float'&gt; 5.3
-    &lt;type 'datetime.datetime'&gt; 2012-10-11 00:00:00 &lt;type 'float'&gt; 5.4
+    &lt;class 'datetime.datetime'&gt; 2012-10-10 00:00:00 &lt;type 'float'&gt; 5.3
+    &lt;class 'datetime.datetime'&gt; 2012-10-11 00:00:00 &lt;type 'float'&gt; 5.4
 
     &gt;&gt;&gt; for d, w in parsed_measurements(lines):
     ...   print d.strftime("%d/%m/%Y"), w

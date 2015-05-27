@@ -46,8 +46,8 @@ __doc__ = """Convert lines 'date measurement' into pairs.
 
 >>> for d, w in parsed_measurements(lines):
 ...   print type(d), d, type(w), w
-<type 'datetime.datetime'> 2012-10-10 00:00:00 <type 'float'> 5.3
-<type 'datetime.datetime'> 2012-10-11 00:00:00 <type 'float'> 5.4
+<class 'datetime.datetime'> 2012-10-10 00:00:00 <type 'float'> 5.3
+<class 'datetime.datetime'> 2012-10-11 00:00:00 <type 'float'> 5.4
 
 >>> for d, w in parsed_measurements(lines):
 ...   print d.strftime("%d/%m/%Y"), w
