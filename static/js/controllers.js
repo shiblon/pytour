@@ -134,7 +134,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
         });
       }
     }
-  }())
+  }());
 
   (function() {
     $scope.tutorial = $scope.tutorials[$scope.chapter-1];
@@ -226,17 +226,25 @@ function CodeCtrl($scope, $http, $location, $timeout) {
         return;
       }
       $scope.clearOutput();
-      vm.loadModuleData("contextlib").then(function() {
+      $scope.codeRunning = true;
+      vm.loadModuleData("contextlib", "argparse")
+      .then(function() {
         try {
           // Clean up the global namespace, get the help function, and create a doctest.
-          vm.execfile("../../../../../_preamble.py").then(function() {
-            return vm.exec(code).catch(function(err) {
-              console.log(err);
+          vm.exec($scope._preamble)
+          .then(function() {
+            return vm.exec(code)
+            .catch(function(err) {
               $scope.addErrorText(err.trace);
+              $scope.codeRunning = false;
+            })
+            .then(function() {
+              $scope.codeRunning = false;
             });
           });
         } catch (err) {
           console.log(err);
+          $scope.codeRunning = false;
           $scope.addErrorText("Internal Error: " + $scope.prettyError(err));
         }
       });
@@ -269,6 +277,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   // If PyPyJS loaded, we can use that. Otherwise, run this thing on the server.
   (function(document, window, undefined) {
     $scope.vmLoaded = false;
+    $scope.coderunning = false;
 
     if (window.PyPyJS !== undefined) {
       console.log("using client-side PyPy.js implementation");

@@ -46,13 +46,15 @@ work.
 from os import listdir
 from os.path import join as pathjoin
 
+parent = 'lib/pypyjs/lib_pypy'
+
 all_files = []
-for name in listdir('tutorials'):
+for name in listdir(parent):
   if not name.endswith('.py'):
     # Remember: 'continue' means 'jump to the top
     # of the loop again'.
     continue
 
-  all_files.append(pathjoin('tutorials', name))
+  all_files.append(pathjoin(parent, name))
 
 print '\n'.join(all_files)

@@ -297,6 +297,10 @@ ul.more li.highlight {
   color: #bbc;
   cursor: default;
 }
+.actions #run.button.running {
+  color: red;
+  cursor: default;
+}
 .actions #more.button {
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;

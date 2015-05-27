@@ -7,13 +7,11 @@ something really useful. To do that, we need to
 _receive_ data from the outside world, not just
 _produce_ it.
 
-If you're running this locally, you can access the
-file system on your computer from your Python
-code. Let's do something silly and potentially a
-bit embarrassing (for lack of volume): let's get
-all of the lines of the main code for the program
-that makes this tutorial work, and print out the
-ones that contain comments.
+In this environment, you can access a virtual filesystem
+that is part of the in-browser interpreter.
+Let's do something silly: let's get
+all of the lines of the Python |string| module
+and print out the ones that contain comments.
 
 To do this, we'll use the builtin |open| function.
 It takes a filename as an argument and returns a
@@ -38,7 +36,7 @@ There is also |strip|, which strips it from both sides.
 
 __doc__ = """Files: Opening the Code"""
 
-f = open('server.py')
+f = open('lib/pypyjs/lib_pypy/string.py')
 
 for line in f:
   if line.lstrip().startswith('#'):  # ignore leading space

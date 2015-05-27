@@ -1,6 +1,6 @@
 # vim:tw=50
 
-""""With" Statements, and Our Tracker
+"""With Statements, and Our Tracker
 
 Now that we've fiddled around a bit with files and
 getting web content, we know that we don't really
@@ -58,7 +58,7 @@ done with them.
 
 import os.path
 
-filename = os.path.join("tutorials", "hello.py")
+filename = os.path.join("lib", "pypyjs", "lib_pypy", "this.py")
 
 with open(filename) as f:
   print f.read()

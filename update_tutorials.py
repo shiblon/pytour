@@ -6,6 +6,7 @@ import cgi
 import contextlib
 import HTMLParser
 import json
+import os
 import os.path
 import re
 import sys
@@ -56,7 +57,11 @@ def content_lines(tutorials_path):
   yield '     To change these chapter contents.'
   yield '-->'
 
+  available_chapters = set(x[:-3] for x in os.listdir(tutorials_path) if x.endswith('.py'))
+
   for chapter in tutorials:
+    if chapter in available_chapters:
+      available_chapters.remove(chapter)
     yield '<div name="{}">'.format(chapter)
     start = False
     for line in open(os.path.join(tutorials_path, "{}.py".format(chapter))):
@@ -66,10 +71,15 @@ def content_lines(tutorials_path):
       yield '  ' + cgi.escape(line.rstrip())
     yield '</div>'
 
+  print "Not using the following chapters:"
+  for c in sorted(available_chapters):
+    print "  " + c
+
 def main():
-  static_dir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), 'static'))
+  project_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+  tutorials_path = os.path.join(project_dir, 'tutorials')
+  static_dir = os.path.join(project_dir, 'static')
   index_path = os.path.join(static_dir, 'index.html')
-  tutorials_path = os.path.join(static_dir, 'tutorials')
 
   original_html = open(index_path).read()
   with contextlib.closing(ContentDivParser()) as parser:
@@ -87,7 +97,6 @@ def main():
   end_line, end_offset = end
   start_line -= 1
   end_line -= 1
-  print start_line, end_line
 
   before = html_lines[:start_line] + [html_lines[start_line][:start_offset]]
   after = [html_lines[end_line][end_offset:]] + html_lines[end_line+1:]

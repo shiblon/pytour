@@ -61,7 +61,7 @@
 <div id="workspace" ng-class="{'fill': contentCollapsed}">
   <div id="workspace_actions" class="actions" ng-class="{'expanded': isExpanded}">
     <div>
-      <a id="run" class="button" ng-class="{'hidden': !vmLoaded}" ng-click="runCode(code)" ng-bind-html="vmLoaded | iif : 'RUN' : '......'"></a><a id="more" class="button" ng-click="isExpanded = !isExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
+      <a id="run" class="button" ng-class="{'hidden': !vmLoaded, 'running': codeRunning}" ng-click="runCode(code)" ng-bind-html="vmLoaded | iif : 'RUN' : '......'"></a><a id="more" class="button" ng-click="isExpanded = !isExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
     </div>
     <ul ng-click="isExpanded=false" class="more">
       <li ng-click="clearOutput()">Clear Output Window</li>
@@ -93,6 +93,7 @@
     
     class _testmod(object):
       sys = sys
+      StringIO = StringIO
     
       def __init__(self):
         self.failed = 0
@@ -102,12 +103,17 @@
     
       def __parse_doc_string(self, s):
         # States:
-        #   None (found &gt;&gt;&gt;) -&gt; Result [store command]
+        #   None (found &gt;&gt;&gt;) -&gt; Command [add to collected command
         #   None (default) -&gt; None
-        #   Result (found &gt;&gt;&gt;) -&gt; Result [store collected result, store command]
+        #   Command (found &gt;&gt;&gt;) -&gt; Command [store collected command, store empty result, add to collected command]
+        #   Command (found ...) -&gt; Command [add to collected command]
+        #   Command (blank) -&gt; None [store collected command, store collected result]
+        #   Command (default) -&gt; Result [store collected command, add to collected result]
+        #   Result (found &gt;&gt;&gt;) -&gt; Command [store collected result, add to collected command]
         #   Result (empty line) -&gt; None [store collected result]
         #   Result (default) -&gt; Result [add to collected result]
         class Result: pass
+        class Command: pass
     
         # Look for instances of &gt;&gt;&gt; and find the text that follows (allowing ellipses).
         state = None
@@ -116,32 +122,56 @@
         results = []
         indentation = None
         collected_result = []
+        collected_command = []
     
         lines = s.split('\n')
-        for line in lines:
+        # Add a blank at the end to make states simpler.
+        for line in lines + ['']:
           ls = line.lstrip()
           if state is None:
             if ls.startswith('&gt;&gt;&gt; '):
-              commands.append(ls[4:])
               indentation = line[:len(line) - len(ls)]
+              collected_command.append(ls[4:])
+              state = Command
+          elif state is Command:
+            if ls.startswith('&gt;&gt;&gt; '):
+              indentation = line[:len(line) - len(ls)]
+              commands.append('\n'.join(collected_command))
+              results.append(None)
+              collected_command = [ls[4:].rstrip('\r\n')]
+              collected_result = []
+            elif ls.startswith('... '):
+              if not line.startswith(indentation + '... '):
+                raise ValueError("invalid command contination indentation: %r" % line)
+              collected_command.append(ls[4:].rstrip('\r\n'))
+            elif not ls:
+              commands.append('\n'.join(collected_command))
+              results.append(collected_result)
+              collected_command = []
+              collected_result = []
+              state = None
+            else:
+              if not line.startswith(indentation):
+                raise ValueError("invalid result indentation: %v", line)
+              commands.append('\n'.join(collected_command))
+              collected_command = []
+              collected_result = [ls.rstrip('\r\n')]
               state = Result
           elif state is Result:
             if ls.startswith('&gt;&gt;&gt; '):
+              indentation = line[:len(line) - len(ls)]
               results.append(collected_result)
               collected_result = []
-              commands.append(ls[4:])
-              indentation = line[:len(line) - len(ls)]
+              collected_command = [ls[4:].rstrip('\r\n')]
+              state = Command
             elif not ls:
               results.append(collected_result)
               collected_result = []
               state = None
             else:
               if not line.startswith(indentation):
-                raise ValueError("invalid result indentation. Expected %r, got %r" % (
-                  indentation, line[:len(indentation)]))
-              collected_result.append(ls.rstrip())
-        if state is Result:
-          results.append(collected_result)
+                raise ValueError("invalid result indentation: %r" % line)
+              collected_result.append(ls.rstrip('\r\n'))
     
         if len(commands) != len(results):
           raise ValueError("invalid doctest - different number of commands from results:\n%r\n%r" % (
@@ -150,17 +180,18 @@
         tests = []
         for c, r in zip(commands, results):
           # See if more than one instance of ellipses made it into any result.
-          numellipses = sum(1 for x in r if x == '...')
-          if numellipses &gt; 1:
-            raise ValueError("too many ellipsis lines in result %v", r)
+          if r is not None:
+            numellipses = sum(1 for x in r if x == '...')
+            if numellipses &gt; 1:
+              raise ValueError("too many ellipsis lines in result %v", r)
           tests.append({'command': c, 'results': r})
     
         return tests
     
       @contextlib.contextmanager
       def __redirect_stdio(self):
-        out = StringIO.StringIO()
-        err = StringIO.StringIO()
+        out = self.StringIO.StringIO()
+        err = self.StringIO.StringIO()
         old_out, self.sys.stdout = self.sys.stdout, out
         old_err, self.sys.stderr = self.sys.stderr, err
         try:
@@ -168,24 +199,39 @@
         finally:
           self.sys.stdout, self.sys.stderr = old_out, old_err
     
-      def __run_test(self, test):
+      def __run_test(self, test, environ={}):
         command = test['command']
         expected = test['results']
         result = ""
         try:
-          result = repr(eval(command))
+          result = eval(command, environ)
         except SyntaxError, synerr:
           with self.__redirect_stdio() as (out, err):
             try:
-              exec(command)
+              exec command in environ
             except Exception, e:
               print e
             result = out.getvalue() + err.getvalue()
     
+        if expected is None:
+          return True
+    
+        if result is None and expected is not None:
+          print "Failed example:"
+          print "\t%s" % command
+          print "Expected:"
+          for line in expected:
+            print "\t%s" % line
+          print "Got None"
+          return False
+    
+        # Now that we have tested for None, we can turn it into a string.
+        result = repr(result)
         if result.endswith('\n'):
           result = result[:-1]
     
         result = result.split('\n')
+    
         expanded_expected = expected
         if len(result) &gt; len(expected) and '...' in expected:
           # Search for ellipses, and expand them to make matching easier.
@@ -237,9 +283,10 @@
     
       def __test_doc_string(self, s):
         tests = self.__parse_doc_string(s)
+        environ = globals().copy()
     
         for t in tests:
-          if self.__run_test(t):
+          if self.__run_test(t, environ):
             self.succeeded += 1
           else:
             self.failed += 1
@@ -270,6 +317,8 @@
         del vars()[_k]
     del _k
     del _kill
+    # This somehow gets changed to __builtin__. Fixing it here.
+    __name__ = '__main__'
   </div>
   <div name="hello">
     """Hello, Python!
@@ -2311,13 +2360,11 @@
     _receive_ data from the outside world, not just
     _produce_ it.
     
-    If you're running this locally, you can access the
-    file system on your computer from your Python
-    code. Let's do something silly and potentially a
-    bit embarrassing (for lack of volume): let's get
-    all of the lines of the main code for the program
-    that makes this tutorial work, and print out the
-    ones that contain comments.
+    In this environment, you can access a virtual filesystem
+    that is part of the in-browser interpreter.
+    Let's do something silly: let's get
+    all of the lines of the Python |string| module
+    and print out the ones that contain comments.
     
     To do this, we'll use the builtin |open| function.
     It takes a filename as an argument and returns a
@@ -2342,7 +2389,7 @@
     
     __doc__ = """Files: Opening the Code"""
     
-    f = open('server.py')
+    f = open('lib/pypyjs/lib_pypy/string.py')
     
     for line in f:
       if line.lstrip().startswith('#'):  # ignore leading space
@@ -2397,79 +2444,18 @@
     from os import listdir
     from os.path import join as pathjoin
     
+    parent = 'lib/pypyjs/lib_pypy'
+    
     all_files = []
-    for name in listdir('tutorials'):
+    for name in listdir(parent):
       if not name.endswith('.py'):
         # Remember: 'continue' means 'jump to the top
         # of the loop again'.
         continue
     
-      all_files.append(pathjoin('tutorials', name))
+      all_files.append(pathjoin(parent, name))
     
     print '\n'.join(all_files)
-  </div>
-  <div name="urls">
-    """Opening URLs
-    
-    The web is like a huge collection of files,
-    all jamming up the pipes as they fall off the
-    truck. Let's quickly turn our attention there,
-    and learn a little more about file objects while
-    we're at it.
-    
-    Let's use |urllib|
-    (http://docs.python.org/2/library/urllib.html) to
-    open the Google Privacy Policy, so we can keep an
-    eye on how long it is getting.
-    
-    The result of urllib.urlopen is a file-like object. It
-    therefore supports |read|, and it supports line-by-line
-    iteration. This is classic Python: define a simple
-    interface, then just make sure you provide the
-    needed functions. It doesn't have to _be_ a file
-    to _act_ like a file, and how it acts is all we
-    care about.
-    
-    We'll continue in that spirit by writing our code
-    so that we can accept any iterable over lines,
-    which also makes it easy to test.
-    
-    Exercises
-    
-    - Open the web site as a file object, get all of the
-      words by using |str.split| on each line (|help|
-      will come in handy), then count and sum up.
-    """
-    
-    __doc__ = """Count the Words
-    
-    Note that "count_words" does not specify a file
-    object, but rather something that can look like a
-    bunch of lines, because that's all it needs.
-    
-    &gt;&gt;&gt; count_words(['some words here\\n', 'some words there'])
-    6
-    """
-    
-    import urllib
-    
-    def count_words(lines):
-      """Counts all words in the 'lines' iterable."""
-      #
-      # TODO: Fill this in.
-    
-    
-    def main():
-      f = urllib.urlopen(
-        "https://www.google.com/intl/en/policies/privacy/")
-      print count_words(f)  # I get 2571
-      f.close()
-    
-    
-    if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
-      main()
   </div>
   <div name="with_tracker_intro">
     """"With" Statements, and Our Tracker
@@ -2530,7 +2516,7 @@
     
     import os.path
     
-    filename = os.path.join("tutorials", "hello.py")
+    filename = os.path.join("lib", "pypyjs", "lib_pypy", "warnings.py")
     
     with open(filename) as f:
       print f.read()
