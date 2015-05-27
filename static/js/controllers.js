@@ -81,7 +81,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   // TOC should be off when we start.
   $scope.tocShowing = false;
 
-  $scope.parseTutorial = function(text) {
+  function parseTutorial(text) {
     var lines = text.split(/\r\n|\n|\r/);
     // If the file starts with comments right at the beginning, strip them off
     // (typically directives to editors).
@@ -103,77 +103,69 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       description: groups[2].replace(/\\(["'])/g, '$1'),
       code: groups[3].replace(/^(\s*)__doc__\s*=\s*/, '$1'),
     };
-  };
+  }
 
-  var tutorialsPending = -1;
+  (function() {
+    $scope.tutorials = [];
+    $scope._preamble = '';
+    var divs = $('#chapter-contents div');
+    var index = 0;
+    for (var i=0, l=divs.length; i<l; i++) {
+      var d = $(divs[i]);
+      var name = d.attr('name');
+      // Discard empty starting lines (one belongs to the end of the tag).
+      var text = d.text().replace(/^\s*\n/m, '');
+      // Find the indentation of the first line.
+      var indent = text.match(/^(\s*)/)[1];
+      // Remove indentation from all lines.
+      var indent_re = new RegExp('^' + indent, 'mg');
+      text = text.replace(indent_re, '');
 
-  function loadTutorial(index, name) {
-    var path = "tutorials/" + name + ".py"
-    $http.get(path).
-      success(function(text) {
-        var parsed = $scope.parseTutorial(text);
-        $scope.tutorials[index] = {
+      if (name == '__preamble__') {
+        $scope._preamble = text;
+      } else {
+        var parsed = parseTutorial(text);
+        $scope.tutorials.push({
           name: name,
-          index: index,
+          index: index++,
           title: parsed.title,
           description: parsed.description,
           code: parsed.code,
-        };
-        tutorialsPending--;
-      });
-  }
-
-  $http.get("tutorials/tutorials.json").
-    success(function(tutNames) {
-      $scope.tutorials = new Array(tutNames.length);
-      tutorialsPending = tutNames.length;
-
-      for (var i=0; i<tutNames.length; i++) {
-        loadTutorial(i, tutNames[i]);
-      }
-
-      // Triggered (below) when no more tutorials are pending.
-      var onTutorialsLoaded = function() {
-        $scope.tutorial = $scope.tutorials[$scope.chapter-1];
-        $scope.loadCode();
-
-        // Redirect to the first page if none is specified.
-        if (!$location.path()) {
-          $location.path('/1').replace();
-        }
-
-        // Notice when the path changes and use that to
-        // navigate, but only after we actually have
-        // data.
-        $scope.$watch('location.path()', function(path) {
-          var newChapter = +path.replace(/^[/]/, '');
-          if (newChapter == 0) {
-            // Special value - don't go to chapter 0.
-            newChapter = $scope.chapter;
-            $scope.location.path("/" + $scope.chapter).replace();
-          }
-          $scope.tocShowing = false;
-          if (newChapter != $scope.chapter) {
-            $scope.saveCode();
-            $scope.chapter = newChapter;
-            $scope.tutorial = $scope.tutorials[newChapter-1];
-            $scope.loadCode();
-            $scope.clearOutput();
-            $(document.body).scrollTop(0);
-          }
         });
-      };
+      }
+    }
+  }())
 
-      // Finally, we wait until tutorialsPending is zero.
-      var checkPending = function() {
-        if (tutorialsPending > 0) {
-          window.setTimeout(checkPending, 1);
-        } else {
-          onTutorialsLoaded();
-        }
-      };
-      window.setTimeout(checkPending, 1);
+  (function() {
+    $scope.tutorial = $scope.tutorials[$scope.chapter-1];
+    $scope.loadCode();
+
+    // Redirect to the first page if none is specified.
+    if (!$location.path()) {
+      $location.path('/1').replace();
+    }
+
+    // Notice when the path changes and use that to
+    // navigate, but only after we actually have
+    // data.
+    $scope.$watch('location.path()', function(path) {
+      var newChapter = +path.replace(/^[/]/, '');
+      if (newChapter == 0) {
+        // Special value - don't go to chapter 0.
+        newChapter = $scope.chapter;
+        $scope.location.path("/" + $scope.chapter).replace();
+      }
+      $scope.tocShowing = false;
+      if (newChapter != $scope.chapter) {
+        $scope.saveCode();
+        $scope.chapter = newChapter;
+        $scope.tutorial = $scope.tutorials[newChapter-1];
+        $scope.loadCode();
+        $scope.clearOutput();
+        $(document.body).scrollTop(0);
+      }
     });
+  }());
 
   // Set up a handy timer that watches when _time changes and starts a new
   // timeout to change it. It's a bit more elegant than creating a function
