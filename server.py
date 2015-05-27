@@ -70,18 +70,21 @@ class App(object):
             'py': 'text/plain'}.get(ext, 'text/plain')
 
   def get_root(self, path, environ, headers):
-    return open("index.html").read()
+    return open("static/index.html").read()
 
   def GET(self, path, environ, headers):
     headers['Content-Type'] = self.mime_type_from_path(path)
     if path == '/':
       headers['Content-Type'] = 'text/html'
-      return open("index.html").read()
+      return open("static/index.html").read()
     elif path == '/doc':
       raise Redirect(self.doc_url)
     else:
+      # Must be a static file:
       # Remove remove parent directory references.
       pieces = [p for p in path.split('/') if p and p != '..']
+      # Add static directory.
+      pieces = ["static"] + pieces
       relpath = os.path.join(*pieces)
       if not os.path.exists(relpath):
         raise NotFound(relpath)
