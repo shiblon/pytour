@@ -1,10 +1,10 @@
-# This is intended to be executed in the same environment as the script.
-# Among other things, it creates a doctest implementation and cleans up the
-# namespace from the previous run.
-
 import sys
 import contextlib
 import StringIO
+
+# This is intended to be executed in the same environment as the script.
+# Among other things, it creates a doctest implementation and cleans up the
+# namespace from the previous run.
 
 class _testmod(object):
   sys = sys
@@ -20,7 +20,7 @@ class _testmod(object):
     # States:
     #   None (found >>>) -> Command [add to collected command
     #   None (default) -> None
-    #   Command (found >>>) -> Command [store collected command, store empty result, add to collected command]
+    #   Command (found >>>) -> Command [add to collected command]
     #   Command (found ...) -> Command [add to collected command]
     #   Command (blank) -> None [store collected command, store collected result]
     #   Command (default) -> Result [store collected command, add to collected result]
@@ -50,15 +50,13 @@ class _testmod(object):
           state = Command
       elif state is Command:
         if ls.startswith('>>> '):
-          indentation = line[:len(line) - len(ls)]
-          commands.append(collected_command)
-          results.append(None)
-          collected_command = [ls[4:].rstrip('\r\n')]
-          collected_result = []
+          if line[:len(line) - len(ls)] != indentation:
+            raise ValueError("invalid command continuation indentation: %r" % line)
+          collected_command.append(ls[4:].rstrip('\r\n'))
         elif ls.startswith('... '):
           if not line.startswith(indentation + '... '):
             raise ValueError("invalid command contination indentation: %r" % line)
-          collected_command.append(ls[4:].rstrip('\r\n'))
+          collected_command[-1] += '\n' + ls[4:].rstrip('\r\n')
         elif not ls:
           commands.append(collected_command)
           results.append(None)
@@ -110,7 +108,7 @@ class _testmod(object):
     old_out, self.sys.stdout = self.sys.stdout, out
     old_err, self.sys.stderr = self.sys.stderr, err
     try:
-      yield out, err
+      yield old_out, old_err, out, err
     finally:
       self.sys.stdout, self.sys.stderr = old_out, old_err
 
@@ -122,13 +120,20 @@ class _testmod(object):
         return open(filename).readlines()[lineno-1]
       frame_info = []
       n = 0
+      inTopLevel = False
       while tb is not None and (limit is None or n < limit):
         f = tb.tb_frame
         lineno = tb.tb_lineno
         co = f.f_code
         filename = co.co_filename
         name = co.co_name
+        if not inTopLevel and name == '<module>':
+          inTopLevel = True
         line = getline(filename, lineno, f.f_globals)
+        if inTopLevel and filename == '<string>':
+          if '__lines__' in globals():
+            if len(__lines__) >= lineno:
+              line = __lines__[lineno-1]
         if line: line = line.strip()
         else: line = None
         frame_info.append((filename, lineno, name, line))
@@ -153,41 +158,37 @@ class _testmod(object):
   def __run_test(self, test, environ={}):
     command = test['command']
     expected = test['results']
-    with self.__redirect_stdio() as (out, err):
-      cmdstr = '\n'.join(command)
-      try:
-        result = eval(cmdstr, environ)
-        if result is not None:
-          print repr(result)
-      except SyntaxError, synerr:
+    with self.__redirect_stdio() as (old_out, old_err, out, err):
+      for cmdstr in command:
+        failed = False
         try:
-          exec cmdstr in environ
+          result = eval(cmdstr, environ)
+          if result:
+            print repr(result)
+        except SyntaxError, synerr:
+          try:
+            exec cmdstr in environ
+          except Exception:
+            print >>err, self.__format_exc()
+            failed = True
         except Exception:
           print >>err, self.__format_exc()
-      except Exception:
-        print >>err, self.__format_exc()
-      finally:
-        result = out.getvalue() + err.getvalue()
+          failed = True
+        finally:
+          result = out.getvalue() + err.getvalue()
+        if failed:
+          break
 
-    if expected is None:
-      return True
+    if result is None:
+      result = ''
 
-    def format_lines(command_lines):
-      return '\n'.join('\t{}'.format(l) for l in command_lines)
-
-    if expected and not result:
-      print "Failed example:"
-      print format_lines(command)
-      print "Expected:"
-      print format_lines(expected)
-      print "Got None"
-      return False
-
-    # Now that we have tested for None, we can turn it into a string.
     if result.endswith('\n'):
       result = result[:-1]
 
     result = result.split('\n')
+
+    if expected is None:
+      expected = []
 
     expanded_expected = expected
     if len(result) > len(expected) and '...' in expected:
@@ -197,35 +198,34 @@ class _testmod(object):
 
     failed = True
 
-    if len(result) != len(expanded_expected):
-      if len(result) == 0:
-        print "Failed example:"
-        print format_lines(command)
-        print "Expected:"
-        print format_lines(expected)
-        print "Got nothing"
-      elif len(expected) == 0:
-        print "Failed example:"
-        print format_lines(command)
-        print "Expected nothing"
-        print "Got:"
-        print format_lines(result)
+    def format_failure(command, expected, result):
+      def format_lines(lines):
+        out = []
+        for line in lines:
+          # Some "lines" are multi-line commands (like loops).
+          out.extend('\t{}'.format(l) for l in line.split('\n'))
+        return out
+
+      lines = ["Failed example:"]
+      lines.extend(format_lines(command))
+      if not expected:
+        lines.append("Expected nothing")
       else:
-        print "Failed example:"
-        print format_lines(command)
-        print "Expected:"
-        print format_lines(expected)
-        print "Got:"
-        print format_lines(result)
+        lines.append("Expected:")
+        lines.extend(format_lines(expected))
+      if not result:
+        lines.append("Got nothing")
+      else:
+        lines.append("Got:")
+        lines.extend(format_lines(result))
+      return '\n'.join(lines)
+
+    if len(result) != len(expanded_expected):
+      print format_failure(command, expected, result)
     else:
       for r, e in zip(result, expanded_expected):
         if r != e and e != '...':
-          print "Failed example:"
-          print format_lines(command)
-          print "Expected:"
-          print format_lines(expected)
-          print "Got:"
-          print format_lines(result)
+          print format_failure(command, expected, result)
           break
       else:
         failed = False
@@ -268,5 +268,4 @@ for _k in _kill:
     del vars()[_k]
 del _k
 del _kill
-# This somehow gets changed to __builtin__. Fixing it here.
 __name__ = '__main__'

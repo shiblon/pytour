@@ -227,6 +227,15 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       console.log("Python loaded");
     }
 
+    function makePythonLines(code) {
+      var lines = code.split(/\n/);
+      for (var i=0,l=lines.length; i<l; i++) {
+        var line = lines[i];
+        lines[i] = '"' + line.replace(/"/g, '\\"') + '"';
+      }
+      return "__lines__ = [" + lines.join(',\n') + "\n]";
+    }
+
     loading();
 
     // Initialize PyPy.js
@@ -245,7 +254,8 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       window.setTimeout(function() {
         try {
           // Clean up the global namespace, get the help function, and create a doctest.
-          vm.exec($scope._preamble)
+          vm.exec($scope._preamble + '\n' +
+                  makePythonLines(code) + '\n')
           .then(function() {
             return vm.exec(code)
             .catch(function(err) {
