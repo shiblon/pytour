@@ -7,6 +7,14 @@ html, body {
   line-height: 1.5em;
   background: #feffff;
 }
+#about {
+  position: absolute;
+  display: block;
+  left: 0;
+  bottom: 15px;
+  text-align: left;
+  padding: .1em .5em;
+}
 #content_container {
   display: block;
   position: relative;
@@ -16,7 +24,6 @@ html, body {
   width: 550px;
   margin: 0 0 0 auto;
   padding: 0;
-  background: url(img/python-powered-w-200x80.png) no-repeat 1.2em bottom;
 }
 #content_container.collapsed {
   display: none;
