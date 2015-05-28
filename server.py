@@ -1,16 +1,9 @@
 #!/usr/bin/python
 
-import ast
-import json
 import optparse
 import os
 import os.path
-import pydoc
-import random
-import runscript
-import re
 import sys
-import threading
 import traceback
 from wsgiref import simple_server
 
@@ -21,9 +14,6 @@ class Redirect(StatusError): pass
 class NotFound(StatusError): pass
 
 class App(object):
-  def __init__(self, doc_url=""):
-    self.doc_url = doc_url
-
   def __call__(self, environ, start_response):
     status = "200 OK"
     response_body = ""
@@ -77,11 +67,9 @@ class App(object):
     if path == '/':
       headers['Content-Type'] = 'text/html'
       return open("static/index.html").read()
-    elif path == '/doc':
-      raise Redirect(self.doc_url)
     else:
       # Must be a static file:
-      # Remove remove parent directory references.
+      # Remove parent directory references.
       pieces = [p for p in path.split('/') if p and p != '..']
       # Add static directory.
       pieces = ["static"] + pieces
@@ -90,30 +78,6 @@ class App(object):
         raise NotFound(relpath)
       return open(relpath).read()
 
-  def POST(self, path, environ, headers):
-    headers['Content-Type'] = 'application/json'
-    try:
-      req_size = int(environ.get("CONTENT_LENGTH", 0))
-    except ValueError:
-      req_size = 0
-
-    req_body = environ["wsgi.input"].read(req_size)
-    if not req_body:
-      return json.dumps(dict(stdout="", stderr=""))
-
-    out, err = runscript.RunScript(req_body)
-    try:
-      return json.dumps(dict(stdout=out, stderr=err))
-    except Exception, e:
-      print "JSON ERROR\n"
-      print "OUT:"
-      print repr(out)
-      print "ERR:"
-      print repr(err)
-      err = "JSON ERROR - see terminal for info:\n" + traceback.format_exc()
-      print err
-      return json.dumps(dict(stdout='', stderr=err), ensure_ascii=False)
-
 
 class NonReverseLookupRequestHandler(simple_server.WSGIRequestHandler):
   def address_string(self):
@@ -121,21 +85,10 @@ class NonReverseLookupRequestHandler(simple_server.WSGIRequestHandler):
     return self.client_address[0]
 
 
-class DocThread(threading.Thread):
-  def __init__(self, port, *args, **kargs):
-    self.port = port
-    super(DocThread, self).__init__(*args, **kargs)
-
-  def run(self):
-    pydoc.serve(self.port)
-
-
 def main():
   parser = optparse.OptionParser()
   parser.add_option("-p", "--port", type=int, default=8080, dest="port",
                     help="Main port for tutorial")
-  parser.add_option("-P", "--docport", type=int, default=8081, dest="docport",
-                    help="Pydoc documentation server port")
   parser.add_option("-H", "--host", type=str, default="localhost", dest="host",
                     help=("Host to listen on - change to 0.0.0.0 to "
                           "allow outside connections."))
@@ -156,13 +109,9 @@ def main():
   print
   print "Tutorial at http://%s:%d/" % (display_host, options.port)
 
-  docthread = DocThread(options.docport)
-  docthread.setDaemon(True)
-  docthread.start()
-
   httpd = simple_server.make_server(
     options.host, options.port,
-    App(doc_url='http://localhost:{0:d}/'.format(options.docport)),
+    App(),
     handler_class=NonReverseLookupRequestHandler)
   httpd.serve_forever()
 
