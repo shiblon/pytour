@@ -231,7 +231,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       var lines = code.split(/\n/);
       for (var i=0,l=lines.length; i<l; i++) {
         var line = lines[i];
-        lines[i] = '"' + line.replace(/"/g, '\\"') + '"';
+        lines[i] = '"' + line.replace(/["\\]/g, '\\$&') + '"';
       }
       return "__lines__ = [" + lines.join(',\n') + "\n]";
     }
