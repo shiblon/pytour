@@ -11,13 +11,21 @@ They have a name, a list of argument names in
 parentheses, a colon, and are always followed by
 an indented code block.
 
-To **return** a value (or values) from a function,
-you use the |return| statement. It can return any
-kind of value, including tuples, which are
-commonly used to return multiple values.
+To **return** a value from a function, you use the
+|return| statement. It can return any kind of
+value, including tuples, which are commonly used
+to package up and return multiple values.
 
-When |return| executes, the function terminates
-immediately.
+It is important to note that all functions
+return *exactly one value*. If you return multiple
+things separated by commas, you are really
+returning a single tuple of values. If you don't
+return anything, you are implicitly returning the
+value |None|. So remember: *functions always
+return exactly one value*.
+
+Also note that when |return| executes, the
+function *terminates immediately*.
 
 Exercises
 
