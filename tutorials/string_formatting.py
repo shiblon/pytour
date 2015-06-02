@@ -2,16 +2,16 @@
 
 """String Formatting
 
-A quick detour is in order, here, since we just used a
-new concept without saying a word about it when we
-raised |ValueError|.
+A quick detour is in order, here, since we want to
+do interesting things with strings besides
+printing out constants.
 
-Recall the following code:
+A string can be *formatted* using the |%| operator
+thus:
 
-  "Non-increasing dates: %s -> %s" % (
-    last_date, date))
+  "I have %d oranges, but only %d apples" % (5, 3)
 
-What is up with |"%s"| and the |%| operator on a
+What is up with |"%d"| and the |%| operator on a
 string? When applied to integers, |%| computes the
 _modulus_ (division remainder), but when operating
 on a string, it does _substitution_ (for those
@@ -20,8 +20,13 @@ examples are in the code window.
 
 There are actually many other format specifiers
 (the |%| inside the strings), too many to go into
-in this tutorial. Full documentation is available
-here:
+in this tutorial, but the most common ones are
+
+  - %d: formats an integer (digits)
+  - %s: formats anything into a string
+  - %r: formats anything using |repr()|
+
+Full documentation is available here:
 
 http://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting
 

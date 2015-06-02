@@ -28,6 +28,19 @@ Exercises
   instead of relying on the early exit behavior of
   |return|.
 """
+# This is a basic function that accepts one
+# argument and returns that argument times 3.
+# As a *side effect*, it also prints what it is
+# doing.
+def times3(x):
+  print "Hey - I'm multiplying " + x + " by 3"
+  return x * 3
+
+# Now that times3 is defined, we can call it as
+# much as we like:
+print times3(12)
+print times3(6)
+
 # A function that returns its two arguments
 # swapped. Note that it returns two values by
 # returning a tuple (parentheses optional).
