@@ -33,7 +33,7 @@ Exercises
 # As a *side effect*, it also prints what it is
 # doing.
 def times3(x):
-  print "Hey - I'm multiplying " + x + " by 3"
+  print "Hey - I'm multiplying {} by 3".format(x)
   return x * 3
 
 # Now that times3 is defined, we can call it as
