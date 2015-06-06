@@ -27,7 +27,33 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     }
   });
 
-  $scope.location = $location;
+  $scope.showDiffIfDirty = function() {
+    if ($scope.dirty()) {
+      $scope.showDiff();
+    }
+  };
+
+  $scope.doDiff = function(left, right) {
+    var target = $('#diffview')[0];
+    target.innerHTML = '';
+    var mv = CodeMirror.MergeView(target, {
+      orig: right,
+      value: left,
+      mode: 'python',
+      lineNumbers: true,
+      highlightDifferences: true,
+      connect: null,
+    });
+  };
+
+  $scope.showDiff = function() {
+    var cw = $('#workspace_top')[0];
+    // Set the width to be the min of twice the code window width and the screen width:
+    var w = Math.min(cw.clientWidth * 2, screen.width);
+    var h = cw.clientHeight;
+
+    window.open('#/diff/' + $scope.chapter, "DiffWin", "width=" + w + ",height=" + h);
+  };
 
   $scope.code = function(code) {
     if (code === undefined) {
@@ -35,6 +61,8 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     }
     $scope.mirror.setValue(code);
   };
+
+  $scope.location = $location;
 
   // This naively assumes that the dirty state is "sticky" unless you force a
   // full recomputation. Works for most purposes in the UI.
@@ -155,7 +183,10 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   }());
 
   (function() {
-    $scope.tutorial = $scope.tutorials[$scope.chapter-1];
+    function loadTutorial(index) {
+      return $scope.tutorials[index];
+    }
+    $scope.tutorial = loadTutorial($scope.chapter-1);
     $scope.loadCode();
 
     // Redirect to the first page if none is specified.
@@ -163,25 +194,40 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       $location.path('/1').replace();
     }
 
-    // Notice when the path changes and use that to
-    // navigate, but only after we actually have
-    // data.
-    $scope.$watch('location.path()', function(path) {
-      var newChapter = +path.replace(/^[/]/, '');
-      if (newChapter == 0) {
+    function goToChapter(chapter) {
+      if (chapter == 0) {
         // Special value - don't go to chapter 0.
-        newChapter = $scope.chapter;
+        chapter = $scope.chapter;
         $scope.location.path("/" + $scope.chapter).replace();
       }
       $scope.tocShowing = false;
-      if (newChapter != $scope.chapter) {
+      if (chapter != $scope.chapter) {
         $scope.saveCode();
-        $scope.chapter = newChapter;
-        $scope.tutorial = $scope.tutorials[newChapter-1];
+        $scope.chapter = chapter;
+        $scope.tutorial = loadTutorial(chapter - 1);
         $scope.loadCode();
         $scope.clearOutput();
         $(document.body).scrollTop(0);
       }
+    }
+
+    $scope.isDiff = function() {
+      return $scope.location.path().split(/[/]/)[1] == 'diff';
+    };
+
+    // Notice when the path changes and use that to
+    // navigate, but only after we actually have
+    // data.
+    $scope.$watch('location.path()', function(path) {
+      var pieces = path.split(/[/]/).slice(1);
+      var chapter = +pieces[pieces.length-1];
+      if (pieces[0] == 'diff') {
+        $scope.diffChapter = +pieces[1];
+        goToChapter(chapter);
+        $scope.doDiff($scope.tutorial.code, $scope.code());
+        return;
+      }
+      goToChapter(chapter);
     });
   }());
 
@@ -332,6 +378,9 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     };
     $scope.vmLoaded = false;
     $scope.coderunning = false;
+    if ($scope.isDiff()) {
+      return;
+    }
 
     if (window.PyPyJS !== undefined) {
       console.log("Using client-side PyPy.js implementation");

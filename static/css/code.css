@@ -401,3 +401,23 @@ ul.more li.highlight {
     margin-left: 100%;
   }
 }
+#diff {
+  height: 100%;
+}
+#diffview .CodeMirror {
+  font-size: 0.8em;
+  line-height: 1.3em;
+  height: 100%;
+}
+#diff #diffview {
+  height: 100%;
+}
+#diff .CodeMirror-merge {
+  height: 100%;
+}
+#diff .CodeMirror-merge-pane {
+  height: 100%;
+}
+div.hidden {
+  display: none;
+}

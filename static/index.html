@@ -28,6 +28,10 @@
 <!-- End project includes -->
 </head>
 <body ng-controller="CodeCtrl">
+<div id="diff" ng-class="{'hidden': !diffChapter}">
+  <div id="diffview"></div>
+</div>
+<div id="main-tour" ng-class="{'hidden': diffChapter}">
 <div id="content_container" ng-class="{'collapsed': contentCollapsed}">
   <div id="toc-trigger">
     <a href="http://python.org/doc/" target="pydocs">Python Docs</a>
@@ -66,16 +70,18 @@
   <span class="chapter">{{chapter}}</span>
 </div>
 <div id="workspace" ng-class="{'fill': contentCollapsed}">
-  <div id="workspace_actions" class="actions" ng-class="{'expanded': isExpanded}">
+  <div id="workspace_actions" class="actions" ng-class="{'expanded': menuExpanded}">
     <div>
-      <a id="run" class="button" ng-class="{'hidden': !vmLoaded || codeRunning}" ng-click="runCode(code)">RUN</a><a id="more" class="button" ng-click="isExpanded = !isExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
+      <a id="run" class="button" ng-class="{'hidden': !vmLoaded || codeRunning}" ng-click="runCode(code)">RUN</a><a id="more" class="button" ng-click="menuExpanded = !menuExpanded" ng-class="{'highlight': dirty()}">&#x25bc;</a>
     </div>
-    <ul ng-click="isExpanded=false" class="more">
+    <ul ng-click="menuExpanded=false" class="more">
       <li ng-click="clearOutput()">Clear Output Window</li>
       <li ng-click="clearCode()">Clear Code Window</li>
       <li><hr></li>
-      <li ng-click="revertCode()" ng-class="{'highlight': dirty()}">Restore Slide Code</li>
-      <li ng-click="revertAll()" ng-class="{'highlight': dirty()}">Restore ALL Slides</li>
+      <li ng-click="showDiffIfDirty()" ng-class="{'disabled': !dirty()}">Show Changes</li>
+      <li><hr></li>
+      <li ng-click="revertCode()" ng-class="{'disabled': !dirty()}">Forget Changes (this slide)</li>
+      <li ng-click="revertAll()" ng-class="{'disabled': !dirty()}">Forget <i>ALL</i> Changes (every slide)</li>
     </ul>
   </div>
   <div id="workspace_top">
