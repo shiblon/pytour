@@ -19,6 +19,17 @@ in Python (something that contains other named
 things); a module is just one of several kinds of
 namespaces.
 
+When understanding functions in a namespace that
+are called, you can think of the
+namespace.function as a single name, e.g.,
+|math.sqrt| is the function name in the code
+window, and |2| is the argument to that function.
+
+Thus, like we discussed earlier about function
+calls, you can replace the entirety of
+|math.sqrt(2)| with its value - that is what
+happens when a function is run.
+
 Exercises
 
 - The |dir| function gives you a _directory_ of a

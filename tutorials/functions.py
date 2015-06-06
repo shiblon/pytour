@@ -27,6 +27,16 @@ return exactly one value*.
 Also note that when |return| executes, the
 function *terminates immediately*.
 
+Remember how we talked about understanding a
+function call by replacing it with the thing it
+returns?See if you can predict what
+|times3(times3(2))| becomes by doing the mental
+replacement exercise we outlined earlier. The neat
+thing is that this time, you can *see* what
+|times3| returns because the definition of it is
+right there in the code window. There is no need
+to pretend.
+
 Exercises
 
 - Put a |print| statement into the |swapped| function.
@@ -35,6 +45,13 @@ Exercises
 - Change the |ordered| function to use |else|
   instead of relying on the early exit behavior of
   |return|.
+
+- Figure out why |swapped(swapped(1, 2))| does not
+  work - do this by mentally performing replacement
+  steps. HINT: every function always returns a
+  single value, every time, no exceptions. When
+  returning multiple values, the function is really
+  returning a single tuple containing those values.
 """
 # This is a basic function that accepts one
 # argument and returns that argument times 3.

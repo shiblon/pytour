@@ -6,7 +6,7 @@ We have talked about strings and numbers, and alluded a
 bit to the fact that we can convert between them.
 
 You can convert between things like numbers and
-strings using the appropriate calls, like
+strings using the appropriate function calls, like
 |int("200")| or |str(1.1 ** 24)|.
 
 There are a number of these **callables** (things
