@@ -1,10 +1,21 @@
 'use strict';
 
 function CodeCtrl($scope, $http, $location, $timeout) {
+  $scope.mirror = CodeMirror.fromTextArea($('#codetext')[0], {
+    mode: 'python',
+    lineNumbers: true,
+    theme: 'neat',
+    indentUnit: 2,
+    extraKeys: {
+      'Tab': 'indentMore',
+      'Shift-Enter': false,
+    },
+  });
+
   $(document).keydown(function(event) {
     var e = window.event || event;
     if (e.keyCode == 13 && e.shiftKey) {  // shift-enter
-      $scope.runCode($scope.code);
+      $scope.runCode($scope.code());
     } else if (e.keyCode == 33) {  // page up
       $scope.location.path("/" + $scope.prevChapter());
       $scope.$apply();
@@ -18,13 +29,20 @@ function CodeCtrl($scope, $http, $location, $timeout) {
 
   $scope.location = $location;
 
+  $scope.code = function(code) {
+    if (code === undefined) {
+      return $scope.mirror.getValue();
+    }
+    $scope.mirror.setValue(code);
+  };
+
   // This naively assumes that the dirty state is "sticky" unless you force a
   // full recomputation. Works for most purposes in the UI.
   $scope._dirty = false;
   $scope.dirty = function(force_recompute) {
     if (force_recompute || !$scope._dirty) {
       $scope._dirty = ($scope.tutorial != undefined &&
-                       $scope.code != $scope.tutorial.code);
+                       $scope.code() != $scope.tutorial.code);
     }
     return $scope._dirty;
   };
@@ -40,7 +58,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     var dirty = $scope.dirty(true);
 
     // Save to the internal JS cache first.
-    $scope.tutorial.userCode = (dirty) ? $scope.code : undefined;
+    $scope.tutorial.userCode = (dirty) ? $scope.code() : undefined;
 
     // Also save to HTML5 local storage if possible.
     // This protects users against refresh and browser crashes.
@@ -72,9 +90,9 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     // If there is data in userCode now, then we display that. Otherwise we get
     // the tutorial code and display that.
     if ($scope.tutorial.userCode !== undefined) {
-      $scope.code = $scope.tutorial.userCode;
+      $scope.code($scope.tutorial.userCode);
     } else {
-      $scope.code = $scope.tutorial.code;
+      $scope.code($scope.tutorial.code);
     }
     $scope.dirty(true);  // Force dirty bit recomputation.
   };
@@ -209,15 +227,17 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   // onLoaded is called when the vm has finished initializing.
   function makeRunOnPyPyJS() {
     function started() {
-      $scope.codeRunning = true;
-      console.log("running code");
-      $scope.$apply();
+      $scope.$apply(function() {
+        console.log("running code");
+        $scope.codeRunning = true;
+      });
     }
     function done() {
-      $scope.codeRunning = false;
-      $scope.firstRun = false;
-      console.log("done");
-      $scope.$apply();
+      $scope.$apply(function() {
+        $scope.codeRunning = false;
+        $scope.firstRun = false;
+        console.log("done");
+      });
     }
     function loading() {
       $scope.vmLoaded = false;
@@ -244,7 +264,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       stderr: $scope.addErrorText,
       autoLoadModules: false,
     });
-    function run(code) {
+    function run() {
       if (!$scope.vmLoaded) {
         console.log("Python not ready - ignoring request to run code")
         return;
@@ -255,9 +275,9 @@ function CodeCtrl($scope, $http, $location, $timeout) {
         try {
           // Clean up the global namespace, get the help function, and create a doctest.
           vm.exec($scope._preamble + '\n' +
-                  makePythonLines(code) + '\n')
+                  makePythonLines($scope.code()) + '\n')
           .then(function() {
-            return vm.exec(code)
+            return vm.exec($scope.code())
             .catch(function(err) {
               $scope.addErrorText(err.trace);
             })
@@ -318,9 +338,9 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       $scope.runCode = makeRunOnPyPyJS();
     } else {
       console.log("Using server-side Python implementation");
-      $scope.runCode = function(code) {
+      $scope.runCode = function() {
         $scope.clearOutput();
-        $http.post("/runcode", code).success(function(data) {
+        $http.post("/runcode", $scope.code()).success(function(data) {
           $scope.addOutputText(data.stdout);
           $scope.addErrorText(data.stderr);
         });
@@ -340,11 +360,11 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   $scope.doNothing = function(e) {}
 
   $scope.clearCode = function() {
-    $scope.code = "";
+    $scope.code('');
   }
 
   $scope.revertCode = function() {
-    $scope.code = $scope.tutorial.code;
+    $scope.code($scope.tutorial.code);
     // Force dirty bit recomputation:
     $scope.dirty(true);
   };

@@ -1,3 +1,3 @@
 'use strict';
 
-angular.module("runcode", ["ngSanitize", "ui", "runcodeFilters"]);
+angular.module("runcode", ["ngSanitize", "runcodeFilters"]);

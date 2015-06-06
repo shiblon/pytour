@@ -134,7 +134,7 @@ div#vm-loading {
 div#vm-loading.showing {
   display: block;
 }
-.CodeMirror {
+div.CodeMirror {
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   border: 1px solid gray;
