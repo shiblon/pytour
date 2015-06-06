@@ -186,6 +186,10 @@ ul.more li.highlight {
   color: #e77;
   font-weight: bold;
 }
+ul.more li.disabled {
+  color: #ddd;
+  cursor: default;
+}
 #workspace_actions a.highlight {
   color: #444;
   background-color: #faa;
