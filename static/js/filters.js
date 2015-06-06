@@ -1,5 +1,5 @@
 angular.module('runcodeFilters', []).
-  filter('iif', function() {
+  filter('inplaceif', function() {
     return function(cond, tval, fval) {
       return cond ? tval : fval;
     };
