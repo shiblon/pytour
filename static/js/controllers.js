@@ -52,7 +52,8 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     var w = Math.min(cw.clientWidth * 2, screen.width);
     var h = cw.clientHeight;
 
-    window.open('#/diff/' + $scope.chapter, "DiffWin", "width=" + w + ",height=" + h);
+    var w = window.open('#/diff/' + $scope.chapter, "DiffWin-" + $scope.chapter, "width=" + w + ",height=" + h);
+    w.focus();
   };
 
   $scope.code = function(code) {
