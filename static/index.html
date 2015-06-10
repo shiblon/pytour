@@ -28,10 +28,10 @@
 <!-- End project includes -->
 </head>
 <body ng-controller="CodeCtrl">
-<div id="diff" ng-class="{'hidden': !diffChapter}">
+<div id="diff" ng-class="{'hidden': !inDiff}">
   <div id="diffview"></div>
 </div>
-<div id="main-tour" ng-class="{'hidden': diffChapter}">
+<div id="main-tour" ng-class="{'hidden': inDiff}">
 <div id="content_container" ng-class="{'collapsed': contentCollapsed}">
   <div id="toc-trigger">
     <a href="http://python.org/doc/" target="pydocs">Python Docs</a>

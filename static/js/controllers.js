@@ -84,6 +84,9 @@ function CodeCtrl($scope, $http, $location, $timeout) {
     if ($scope.tutorial === undefined) {
       return;
     }
+    if ($scope.inDiff) {
+      return;
+    }
     var dirty = $scope.dirty(true);
 
     // Save to the internal JS cache first.
@@ -212,23 +215,18 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       }
     }
 
-    $scope.isDiff = function() {
-      return $scope.location.path().split(/[/]/)[1] == 'diff';
-    };
-
     // Notice when the path changes and use that to
     // navigate, but only after we actually have
     // data.
     $scope.$watch('location.path()', function(path) {
       var pieces = path.split(/[/]/).slice(1);
       var chapter = +pieces[pieces.length-1];
-      if (pieces[0] == 'diff') {
-        $scope.diffChapter = +pieces[1];
-        goToChapter(chapter);
-        $scope.doDiff($scope.tutorial.code, $scope.code());
-        return;
-      }
+      // This must come before goToChapter, to avoid the diff saving code.
+      $scope.inDiff = pieces[0] == 'diff';
       goToChapter(chapter);
+      if ($scope.inDiff) {
+        $scope.doDiff($scope.tutorial.code, $scope.code());
+      }
     });
   }());
 
@@ -374,12 +372,17 @@ function CodeCtrl($scope, $http, $location, $timeout) {
 
   // If PyPyJS loaded, we can use that. Otherwise, run this thing on the server.
   (function(document, window, undefined) {
+    function hasDiffPath() {
+      return $scope.location.path().split(/[/]/)[1] == 'diff';
+    };
+
     $scope.runCode = function() {
       console.log("Can't run code yet - not wired up.");
     };
     $scope.vmLoaded = false;
     $scope.coderunning = false;
-    if ($scope.isDiff()) {
+    if (hasDiffPath()) {
+      // Note that we don't just check inDiff here, because it might not be set yet.
       return;
     }
 
