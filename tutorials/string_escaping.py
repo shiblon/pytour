@@ -15,7 +15,7 @@ quotes inside of a string. In these cases, you can
 
   "This string contains the \\" delimiter."
 
-Strings accept other escape sequences, like |'\\n'|, which inserts
+Strings accept other escape sequences, like |'\n'|, which inserts
 a line feed character, making a new line. More
 info can be found here:
 
