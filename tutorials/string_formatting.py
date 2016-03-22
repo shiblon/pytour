@@ -39,7 +39,7 @@ heavy reading:
 http://docs.python.org/2/library/string.html#formatstrings
 
 We'll use a bit of both, but |str.format| has many
-advantages (including incraesed clarity), so we'll
+advantages (including increased clarity), so we'll
 gravitate to it over time.
 """
 
