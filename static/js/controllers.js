@@ -1,5 +1,31 @@
 'use strict';
 
+function setStorage(keys, val) {
+  if (typeof Storage === undefined) {
+    return;
+  }
+  var curr = localStorage;
+  for (var i=0, len=keys.length; i<len-1; i++) {
+    var key = keys[i];
+    if (curr[key] == null) {
+      curr[key] = {};
+    }
+    curr = curr[key];
+  }
+  curr[keys[keys.length-1]] = val;
+}
+
+function getStorage(keys) {
+  if (typeof Storage === undefined) {
+    return undefined;
+  }
+  var curr = localStorage;
+  for (var i=0, len=keys.length; i<len; i++) {
+    curr = curr[keys[i]];
+  }
+  return curr;
+}
+
 function CodeCtrl($scope, $http, $location, $timeout) {
   $scope.mirror = CodeMirror.fromTextArea($('#codetext')[0], {
     mode: 'python',
