@@ -1,26 +1,33 @@
 'use strict';
 
 function setStorage(keys, val) {
-  if (typeof Storage === undefined) {
+  if (typeof Storage === "undefined") {
     return;
   }
-  var curr = localStorage;
-  for (var i=0, len=keys.length; i<len-1; i++) {
-    var key = keys[i];
-    if (curr[key] == null) {
-      curr[key] = {};
-    }
-    curr = curr[key];
+
+  if (keys.length == 1) {
+    localStorage[keys[0]] = val;
+    return;
+  }
+
+  var obj = {};
+  var curr = obj;
+  for (var i=1, len=keys.length; i<len-1; i++) {
+    curr = curr[keys[i]] = {};
   }
   curr[keys[keys.length-1]] = val;
+
+  localStorage[keys[0]] = JSON.stringify(obj);
 }
 
 function getStorage(keys) {
-  if (typeof Storage === undefined) {
+  if (typeof Storage === "undefined") {
     return undefined;
   }
-  var curr = localStorage;
-  for (var i=0, len=keys.length; i<len; i++) {
+
+  var obj = JSON.parse(localStorage[keys[0]]);
+  var curr = obj;
+  for (var i=1, len=keys.length; i<len; i++) {
     curr = curr[keys[i]];
   }
   return curr;
@@ -221,10 +228,12 @@ function CodeCtrl($scope, $http, $location, $timeout) {
 
     // Redirect to the first page if none is specified.
     if (!$location.path()) {
-      $location.path('/1').replace();
+      var c = getStorage(['pytut', 'curChapter']) || 1;
+      $location.path('/' + c).replace();
     }
 
     function goToChapter(chapter) {
+      setStorage(['pytut', 'curChapter'], chapter);
       if (chapter == 0) {
         // Special value - don't go to chapter 0.
         chapter = $scope.chapter;
