@@ -25,7 +25,11 @@ function getStorage(keys) {
     return undefined;
   }
 
-  var obj = JSON.parse(localStorage[keys[0]]);
+  var str = localStorage[keys[0]];
+  if (str == null) {
+    return undefined;
+  }
+  var obj = JSON.parse(str);
   var curr = obj;
   for (var i=1, len=keys.length; i<len; i++) {
     curr = curr[keys[i]];
