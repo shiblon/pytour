@@ -35,6 +35,9 @@ Make these tests pass:
 
 >>> reverse_a("not so silly")
 'not so silly'
+
+>>> reverse_a("")
+''
 """
 
 def reverse_a(s):

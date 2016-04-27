@@ -266,7 +266,7 @@
             failed = False
             try:
               result = eval(cmdstr, environ)
-              if result is not None:
+              if result:
                 print repr(result)
             except SyntaxError, synerr:
               try:
@@ -1955,6 +1955,9 @@
 
     &gt;&gt;&gt; reverse_a("not so silly")
     'not so silly'
+
+    &gt;&gt;&gt; reverse_a("")
+    ''
     """
 
     def reverse_a(s):
