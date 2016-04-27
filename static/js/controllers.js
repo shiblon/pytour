@@ -425,20 +425,11 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       return;
     }
 
-    if (window.PyPyJS !== undefined) {
-      console.log("Using client-side PyPy.js implementation");
-      $scope.runCode = makeRunOnPyPyJS();
-    } else {
-      console.log("Using server-side Python implementation");
-      $scope.runCode = function() {
-        $scope.clearOutput();
-        $http.post("/runcode", $scope.code()).success(function(data) {
-          $scope.addOutputText(data.stdout);
-          $scope.addErrorText(data.stderr);
-        });
-      };
-      $scope.vmLoaded = true;
+    if (typeof window.PyPyJS === "undefined") {
+      throw new Error("Client-side PyPy.js implementation not available");
     }
+    console.log("Using client-side PyPy.js implementation");
+    $scope.runCode = makeRunOnPyPyJS();
   }(document, window))
 
   // This is useful for binding keys in the code window to do
