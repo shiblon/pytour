@@ -105,7 +105,6 @@ def main():
     print "  Note - if you want to see this from outside, see the help."
   else:
     print "WARNING: This app is visible from outside of this computer."
-    print "         Be aware that arbitrary code can be executed by others."
   print
   print "Tutorial at http://%s:%d/" % (display_host, options.port)
 
