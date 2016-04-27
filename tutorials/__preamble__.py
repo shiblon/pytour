@@ -163,7 +163,7 @@ class _testmod(object):
         failed = False
         try:
           result = eval(cmdstr, environ)
-          if result:
+          if result is not None:
             print repr(result)
         except SyntaxError, synerr:
           try:
