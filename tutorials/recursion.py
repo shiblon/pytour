@@ -61,7 +61,7 @@ See below.
 
 def factorial(n):
   if n <= 1:
-    return n
+    return 1
   # print "before recursion", n
   smaller_problem = factorial(n - 1)
   # print "after recursion", n
