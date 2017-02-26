@@ -57,6 +57,7 @@ Blank lines and comment lines are also allowed. See the tests here.
 ['2012-10-10', '5.4']
 ['2012-10-11', '5.3']
 >>> parse_measurements(['2012-10-10 5.4', '2012-10-09 5.3'])
+['2012-10-10', '5.4']
 Traceback (most recent call last):
 ...
 ValueError: Non-increasing dates: 2012-10-10 -> 2012-10-09
