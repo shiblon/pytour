@@ -199,10 +199,10 @@ ul.more li.disabled {
   display: block;
 }
 #content-header {
-  padding: 0 4em;
+  padding: 0 1.2em;
 }
 #content-header h1 {
-  padding: 1.2em 0 .2em;
+  padding: 3.2em 0 .2em;
   font-size: 16px;
   font-weight: bold;
 }
