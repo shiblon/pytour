@@ -425,3 +425,9 @@ ul.more li.disabled {
 div.hidden {
   display: none;
 }
+.warning {
+  background: red;
+  font-weight: bold;
+  color: white;
+  padding: 0.2em;
+}
