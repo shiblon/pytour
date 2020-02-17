@@ -22,12 +22,12 @@ of the text.
 Exercises
 
 - Print a string with a comment leader inside of
-  it, e.g., |print "# a comment?"|.
+  it, e.g., |print("# a comment?")|.
 """
 
 # This is a comment. Comments start with '#' and
 # extend to the end of the current line.
 
-print "hey"
-print # This just prints a blank line.
-print "hello"
+print("hey")
+print() # This just prints a blank line.
+print("hello")

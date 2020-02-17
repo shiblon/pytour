@@ -96,9 +96,15 @@
        To change these chapter contents.
   -->
   <div name="__preamble__">
+    import re
     import sys
-    from browser import document
+
+    from browser import console, document
     from browser import html
+
+
+    _PREAMBLE_LENGTH = {.PREAMBLE_LENGTH} # fill in from controllers.js.
+    _EXC_LINE_NO = re.compile(r'\bline (\d+)$', re.MULTILINE)
 
 
     class __out__:
@@ -106,9 +112,38 @@
 
         def __init__(self, el_class='stdout'):
             self.el_class = el_class
+            self.last_text = None
 
-        def write(self, b):
-            self.out_el &lt;= html.PRE(b, Class=' '.join(['outputEntry', self.el_class]))
+        def write(self, text):
+            if text == self.last_text:
+                console.log('Repeated text found, not sending to output window.')
+                return 0
+
+            # TODO: figure out why brython repeats errors when stdout/stderr are
+            # overridden like this.
+            self.last_text = text
+
+            if self.el_class == 'stderr':
+                def line_rewrite(match):
+                    console.log('in match');
+                    if not match: return
+                    lno = int(match.group(1))
+                    if lno &lt; _PREAMBLE_LENGTH:
+                        return 'line {}'.format(lno)
+                    return 'line {}'.format(lno - _PREAMBLE_LENGTH + 1)
+
+                console.log('before', text)
+                try:
+                    text = _EXC_LINE_NO.sub(line_rewrite, text)
+                except Exception as e:
+                    console.error(e)
+                console.log('after', text)
+
+            # TODO: if an exception, look for lines greater than preamble length,
+            # and update offset.
+            self.out_el &lt;= html.PRE(text, Class=' '.join(['output-entry', self.el_class]))
+            return len(text)
+
 
     sys.stdout = __out__('stdout')
     sys.stderr = __out__('stderr')
@@ -187,15 +222,15 @@
     Exercises
 
     - Print a string with a comment leader inside of
-      it, e.g., |print "# a comment?"|.
+      it, e.g., |print("# a comment?")|.
     """
 
     # This is a comment. Comments start with '#' and
     # extend to the end of the current line.
 
-    print "hey"
-    print # This just prints a blank line.
-    print "hello"
+    print("hey")
+    print() # This just prints a blank line.
+    print("hello")
   </div>
   <div name="variables">
     """Variables
@@ -228,16 +263,16 @@
     """
 
     a = "hi there"  # 'a' now contains a string of text.
-    print a
+    print(a)
 
     a = 10  # 'a' now contains an integer number.
-    print a
+    print(a)
 
     my_longer_varname = 14
-    print my_longer_varname
+    print(my_longer_varname)
 
     # Until assigned, variables cannot be accessed.
-    print i_dont_exist  # Not yet assigned!
+    print(i_dont_exist)  # Not yet assigned!
   </div>
   <div name="strings">
     """Strings

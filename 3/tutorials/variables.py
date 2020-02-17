@@ -30,13 +30,13 @@ Exercises
 """
 
 a = "hi there"  # 'a' now contains a string of text.
-print a
+print(a)
 
 a = 10  # 'a' now contains an integer number.
-print a
+print(a)
 
 my_longer_varname = 14
-print my_longer_varname
+print(my_longer_varname)
 
 # Until assigned, variables cannot be accessed.
-print i_dont_exist  # Not yet assigned!
+print(i_dont_exist)  # Not yet assigned!

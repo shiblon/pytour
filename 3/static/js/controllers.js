@@ -349,19 +349,18 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       }
       $scope.clearOutput();
       started();
-      window.setTimeout(function() {
-        try {
-          // Clean up the global namespace, get the help function, and create a doctest.
-          var setupCode = $scope._preamble + '\n' + makePythonLines($scope.code()) + '\n';
-          // TODO: figure out localsid stuff and module meaning.
-          $B.run_script(setupCode + '\n' + $scope.code() + '\n', '__main__', 'localsid');
-          done();
-        } catch (err) {
-          console.log(err);
-          $scope.addErrorText("Internal Error: " + $scope.prettyError(err));
-          done();
-        }
-      }, 100);
+      try {
+        var preamble = $scope._preamble + '\n' + makePythonLines($scope.code()) + '\n';
+        preamble = preamble.replace('{.PREAMBLE_LENGTH}', preamble.split('\n').length);
+        var code = preamble + $scope.code() + '\n';
+        // TODO: figure out localsid stuff and module meaning.
+        $B.run_script(code, '__main__', 'localsid');
+      } catch (err) {
+        console.log(err);
+        //$scope.addErrorText("Internal Error: " + $scope.prettyError(err));
+      } finally {
+        done();
+      }
     }
     loaded();
     return run;
