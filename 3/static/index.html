@@ -32,10 +32,10 @@
 <div id="main-tour" ng-class="{'hidden': inDiff}">
 <div id="content_container" ng-class="{'collapsed': contentCollapsed}">
   <div id="toc-trigger">
-    <a href="http://docs.python.org/3/" target="pydocs">Python Docs</a>
+    <a href="http://docs.python.org/3/" target="pydocs">Python 3 Docs</a>
   </div>
   <div id="content-header">
-    <h1>Interactive Python Tutorial <span class="toc" ng-class="{'toc-showing': tocShowing}" ng-click="tocShowing = !tocShowing" ng-bind-html="tocShowing | inplaceif : '&#x25b2; TOC' : '&#x25bc; TOC' ">&#x25b2;&#x25bc; TOC</span></h1>
+    <h1>Interactive Python 3 Tutorial <span class="toc" ng-class="{'toc-showing': tocShowing}" ng-click="tocShowing = !tocShowing" ng-bind-html="tocShowing | inplaceif : '&#x25b2; TOC' : '&#x25bc; TOC' ">&#x25b2;&#x25bc; TOC</span></h1>
     <div id="collapser" ng-click="contentCollapsed=true">&gt;&gt;</div>
     <div id="chapter-num">
       <a class="nav" ng-class="{'hidden': chapter <= 1}" href="#/{{prevChapter()}}">&#x25c0;</a>{{chapter}}<a class="nav" ng-class="{'hidden': chapter >= tutorials.length }" href="#/{{nextChapter()}}">&#x25b6;</a>
@@ -88,8 +88,8 @@
   <div id="workspace_bottom">
     <div id="output" ng-class="{'hidden': !vmLoaded || codeRunning}" name="output">
       <img id="output-spinner" src="img/spinner.gif" ng-class="{'on': !vmLoaded || codeRunning}">
-      <div ng-class="{'showing': firstRun && codeRunning}" id="first-run">Running for the first time. This will take a few seconds.</div>
-      <div ng-class="{'showing': !vmLoaded}" id="vm-loading">Loading Python</div>
+      <div ng-class="{'showing': firstRun && codeRunning}" id="first-run">Running for the first time. This may take a few seconds.</div>
+      <div ng-class="{'showing': !vmLoaded}" id="vm-loading">Loading Brython</div>
     </div>
   </div>
 </div>
