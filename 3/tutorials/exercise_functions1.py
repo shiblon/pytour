@@ -7,12 +7,17 @@ interesting! Let's remind ourselves of how |if|
 and **slicing** work.
 
 For this and later exercises, you will fill in the
-code marked |# TODO:| to make the doctests pass.
+code marked |# TODO:| to make the tests pass.
 Remember that you can use |[::-1]| to get a
 reversed sequence using a slice.
 
 First try running the code without changes. What
 fails?
+
+Note: we have included a special |_assert_equal|
+function for testing. You would normally use the
+|unittest| or |doctest| module for this, but it
+is convenient in this tutorial to keep it simple.
 
 Exercises
 
@@ -28,16 +33,7 @@ Exercises
 
 __doc__ = """Functions and branching exercise (1)
 
-Make these tests pass:
-
->>> reverse_a("a silly thing")
-'gniht yllis a'
-
->>> reverse_a("not so silly")
-'not so silly'
-
->>> reverse_a("")
-''
+Make the assertion tests at the bottom of the file pass.
 """
 
 def reverse_a(s):
@@ -45,5 +41,7 @@ def reverse_a(s):
   # TODO: Fill this in.
 
 
-if _testmod().failed == 0:
-  print "Success!"
+print("No news is good news: if nothing prints below, you passed!")
+_assert_equal("gniht yllis a", reverse_a("a silly thing"))
+_assert_equal("not so silly", reverse_a("not so silly"))
+_assert_equal("", reverse_a(""))

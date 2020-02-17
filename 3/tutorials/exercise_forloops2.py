@@ -37,14 +37,7 @@ Exercises
   |for| loops.
 """
 
-__doc__ = """Loop Exercises
-
->>> fib = []
->>> for i in range(10):
-...   fib.append(fibonacci(i))
->>> fib
-[1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
-"""
+__doc__ = """Loop Exercises"""
 
 def fibonacci(n):
   """Returns nth element of the Fibonacci sequence.
@@ -61,5 +54,5 @@ def fibonacci(n):
 
 
 if __name__ == '__main__':
-  if not _testmod().failed:
-    print "Success!"
+  _assert_equal([1, 1, 2, 3, 5, 8, 13, 21, 34, 55],
+                [fibonacci(i) for i in range(10)])

@@ -30,20 +30,20 @@ Exercises
 - Add an |elif a == b:| block between |if| and |else|.
   What does it do?
 
-- Move the |print| statement for the string test
+- Move the |print| function for the string test
   into an |else| clause, and make the |if| clause
   empty using the |pass| keyword as its body. What
   happens?
 """
 
 if "George" < "Mary":
-  print "Alphabetic sorting works!"
-  print "And we can say more if we want, too!"
+  print("Alphabetic sorting works!")
+  print("And we can say more if we want, too!")
 
 if 0 == 1:
-  print "Math is busted."
-print "This unindented code always runs"
-print "because it is not in the 'if' block."
+  print("Math is busted.")
+print("This unindented code always runs")
+print("because it is not in the 'if' block.")
 
 a = 5
 b = 10
@@ -51,4 +51,4 @@ b = 10
 if a > b:
   pass  # Do nothing.
 else:
-  print 'Math still works!'
+  print('Math still works!')

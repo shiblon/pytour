@@ -37,8 +37,8 @@ Exercises
 """
 
 def takes_two(first, second):
-  print "first:", first
-  print "second:", second
+  print("first:", first)
+  print("second:", second)
 
 # You can unpack a dictionary into named
 # arguments with **:
@@ -52,8 +52,8 @@ takes_two(**{'first': 'the first thing',
 # end up in kargs.
 #
 def accepts_keys(prefix, name, suffix='', **kargs):
-  print "The Famous", prefix, name + ',', suffix
-  print "Extra Info:", kargs
+  print("The Famous", prefix, name + ',', suffix)
+  print("Extra Info:", kargs)
 
 accepts_keys("Dr.", "Batman", "PhD.", sidekick="Postdoc Robin")
 accepts_keys(name="Mata Hari", role="Spy", prefix='Ms',
@@ -62,6 +62,6 @@ accepts_keys(name="Mata Hari", role="Spy", prefix='Ms',
 # You can also accept both types of arguments:
 #
 def accepts_everything(a, b, *args, **kargs):
-  print a, b, args, kargs
+  print(a, b, args, kargs)
 
 accepts_everything(1, 2, 3, 4, 5, x='time', y='money')

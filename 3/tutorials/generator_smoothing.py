@@ -42,10 +42,6 @@ smoothing to values. The first smoothed value is
 just the value itself. After that, each smoothed
 value is calculated to be 10% of the distance to
 the new value.
-
->>> values = [8.2, 8.1, 8.0, 7.8, 7.9, 8.0, 7.5]
->>> ["{0:.2f}".format(x) for x in exponentially_smoothed(values)]
-['8.20', '8.19', '8.17', '8.13', '8.11', '8.10', '8.04']
 """
 
 def exponentially_smoothed(numbers):
@@ -60,5 +56,6 @@ def exponentially_smoothed(numbers):
 
 
 if __name__ == '__main__':
-  if not _testmod().failed:
-    print "Success!"
+  values = [8.2, 8.1, 8.0, 7.8, 7.9, 8.0, 7.5]
+  _assert_equal(['8.20', '8.19', '8.17', '8.13', '8.11', '8.10', '8.04'],
+                ["{0:.2f}".format(x) for x in exponentially_smoothed(values)])

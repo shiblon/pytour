@@ -45,7 +45,7 @@ __doc__ = """Make this test pass:
 ... 2012-01-05 8.0
 ... 2012-01-06 7.9
 ... '''.split('\\n')
->>> print '\\n'.join(make_chart_url_data(parsed_measurements(data)))
+>>> print('\\n'.join(make_chart_url_data(parsed_measurements(data))))
 chd=t:8.50,8.40,8.10,8.30,8.00,7.90|8.50,8.49,8.45,8.44,8.39,8.34
 chxt=x,y&chxl=0:|01|02|03|04|05|06|
 """
@@ -99,8 +99,8 @@ def clean_lines(lines):
 
 if __name__ == '__main__':
   if not _testmod().failed:
-    print "Success!"
-  print ("http://chart.googleapis.com/chart?chs=320x200&cht=lc&chds=a&" +
+    print("Success!")
+  print(("http://chart.googleapis.com/chart?chs=320x200&cht=lc&chds=a&" +)
          "&".join(make_chart_url_data(parsed_measurements(["2012-01-01 8.5",
                                                            "2012-01-02 8.1",
                                                            "2012-01-03 7.5",

@@ -43,13 +43,13 @@ def print_all(seq):
   """Print all elements of seq."""
   i = 0
   while i < len(seq):
-    print "item", i, seq[i]
+    print("item", i, seq[i])
     i = i + 1  # This is also spelled 'i += 1'
 
 def slicing_print_all(seq):
   """Another way of using while - less efficient."""
   while seq:
-    print seq[0]
+    print(seq[0])
     seq = seq[1:]
 
 def add_all(seq):
@@ -61,11 +61,11 @@ def add_all(seq):
     i += 1
   return s
 
-print "Using indices:"
+print("Using indices:")
 print_all([1, 5, 8, "hello", 9])
 
-print "Using slices:"
+print("Using slices:")
 slicing_print_all(range(3))
 
-print "Summing:"
-print "sum of all:", add_all(range(1,12))  # Should be 66
+print("Summing:")
+print("sum of all:", add_all(range(1,12)))  # Should be 66

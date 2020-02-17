@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+
+from __future__ import print_function
 
 """Update the tutorials in the index.html file."""
 
@@ -71,9 +73,9 @@ def content_lines(tutorials_path):
       yield '  ' + cgi.escape(line.rstrip())
     yield '</div>'
 
-  print "Not using the following chapters:"
+  print("Not using the following chapters:")
   for c in sorted(available_chapters):
-    print "  " + c
+    print("  " + c)
 
 def main():
   project_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -104,7 +106,7 @@ def main():
   new_content = '\n'.join(before + list(('  ' + x).rstrip()
                                         for x in content_lines(tutorials_path)) + after)
   with open(index_path, 'wt') as f:
-    print >>f, new_content
+    print(new_content, file=f)
 
 if __name__ == "__main__":
   main()

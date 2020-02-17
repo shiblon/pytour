@@ -25,13 +25,7 @@ Exercises
   pairs, as described in the TODO. Make the test pass.
 """
 
-__doc__ = """Enumerator Exercise
-
->>> enumerator("stuff")
-[(0, 's'), (1, 't'), (2, 'u'), (3, 'f'), (4, 'f')]
->>> enumerator(['a', 'b', 'c', 'd'])
-[(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')]
-"""
+__doc__ = """Enumerator Exercise"""
 
 
 def enumerator(seq):
@@ -44,10 +38,11 @@ def enumerator(seq):
 
 
 if __name__ == '__main__':
-  if not _testmod().failed:
-    print "Success!"
-
+  _assert_equal([(0, 's'), (1, 't'), (2, 'u'), (3, 'f'), (4, 'f')],
+                enumerator("stuff"))
+  _assert_equal([(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
+                enumerator(['a', 'b', 'c', 'd']))
   # Note how, when we know we have a list of pairs, we
   # can just unpack them right in the loop statement.
   for i, x in enumerator("a sequence of characters"):
-    print i, x
+    print(i, x)

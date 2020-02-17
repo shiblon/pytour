@@ -34,25 +34,25 @@ Bonus Work
 """
 
 # Basic numeric types.
-print "I'm an int:", 10
-print "I'm a float:", 2.79
-print "I'm complex:", 3.14 + 1j
+print("I'm an int:", 10)
+print("I'm a float:", 2.79)
+print("I'm complex:", 3.14 + 1j)
 
 # Math is easy.
 
 a = 1000.0
 
 # Some basic math operators:
-print
-print "Basic Math Operators:"
-print "Div:", a / 10.0  # Divide by 10
-print "Mul:", a * 10    # Multiply by 10
-print "Add:", a + 12    # Add 12
-print "Sub:", a - 15    # Subtract 15
-print "Exp:", a ** 5    # Take a to the 5th power.
+print()
+print("Basic Math Operators:")
+print("Div:", a / 10.0)  # Divide by 10
+print("Mul:", a * 10)    # Multiply by 10
+print("Add:", a + 12)    # Add 12
+print("Sub:", a - 15)    # Subtract 15
+print("Exp:", a ** 5)    # Take a to the 5th power.
 
 # Grouping:
-print
-print "Parentheses:"
-print "Multiplication before addition:", 3 + 2 * 5
-print "Force addition to come first:", (3 + 2) * 5
+print()
+print("Parentheses:")
+print("Multiplication before addition:", 3 + 2 * 5)
+print("Force addition to come first:", (3 + 2) * 5)

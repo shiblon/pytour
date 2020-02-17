@@ -47,15 +47,15 @@ def histogram(data):
 
 
 hist = histogram([10, 10.2, 10.4, 10.2, 10.1, 10.0, 9.5, 9.8, 8.7])
-print "Raw:"
-print hist
+print("Raw:")
+print(hist)
 
 # Now try sorting it.
-print "Sorted:"
+print("Sorted:")
 for k, v in sorted(hist.items()):
-  print "%s: %d" % (k, v)
+  print("%s: %d" % (k, v))
 
 # Now try sorting it with a weird key (string reversal):
-print "Weirdly sorted:"
+print("Weirdly sorted:")
 for k, v in sorted(hist.items(), key=lambda x: x[0][::-1]):
-  print "%s: %d" % (k, v)
+  print("%s: %d" % (k, v))

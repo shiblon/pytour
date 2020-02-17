@@ -46,8 +46,8 @@ __doc__ = """Importing Modules, Doing Math"""
 import math
 
 # My favorite constants.
-print math.pi
-print math.e
+print(math.pi)
+print(math.e)
 
 # Another important one (a square root).
-print math.sqrt(2)
+print(math.sqrt(2))

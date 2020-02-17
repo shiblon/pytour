@@ -38,27 +38,27 @@ Exercises
   like |5 < 7| or |'hello' >= 'hello there'|.
 """
 
-print "Strings are not equal to integers."
-print "10" != 10   # True
-print 10 == 5 + 5  # True
+print("Strings are not equal to integers.")
+print("10" != 10)   # True
+print(10 == 5 + 5)  # True
 
-print "Variable assignment satisfies 'is'"
+print("Variable assignment satisfies 'is'")
 a = 1543
 b = a
 
-print a == b    # Obviously true - same data.
-print a != a+1  # Indeed.
-print a is b    # Also true. Assignment satisfies 'is'.
+print(a == b)    # Obviously true - same data.
+print(a != a+1)  # Indeed.
+print(a is b)    # Also true. Assignment satisfies 'is'.
 
 # Performing an operation on data like integers or
 # strings produces a *new thing*, even if the data is
 # the same.
-print "Same data, not same thingy."
+print("Same data, not same thing.")
 b = a + 0
 
-print a == b    # Still true.
-print a is b    # No longer true!
+print(a == b)    # Still true.
+print(a is b)    # No longer true in some implementations!
 
-print "not None:", a is not None  # A very common kind of test.
+print("not None:", a is not None)  # A very common kind of test.
 c = None
-print c is not None  # False
+print(c is not None)  # False

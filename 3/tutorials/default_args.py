@@ -15,7 +15,7 @@ To define defaults for function arguments, you
 assign them where they are declared, thus:
 
   def myfunc(greeting, name='Compadre'):
-    print greeting, name + '!'
+    print(greeting, name + '!')
 
 In this example, the parameter called |name| has a
 default value that will be used if the caller does
@@ -41,13 +41,13 @@ Exercise
 # If no name is specified when this is called, the
 # default value is used.
 def greet(greeting, name='Partner'):
-  print greeting + ',', name + '!'
+  print(greeting + ',', name + '!')
 
 # Use the default name.
 greet("Howdy")
 
 # Use our supplied name.
-greet("Hello", "Honey")
+greet("Hello", "Fellow Human")
 
 # Call using named arguments. Note that, when
 # naming arguments, order is unimportant.
@@ -55,7 +55,7 @@ greet(name='crazy', greeting='Wow')
 
 # Let's accept even more arguments.
 def print_many_args(a, b, c, d="D", e="E", f="F"):
-  print a, b, c, d, e, f
+  print(a, b, c, d, e, f)
 
 # Regular call without defaults:
 print_many_args("1", "2", "3", e="new_E")

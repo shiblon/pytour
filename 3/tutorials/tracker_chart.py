@@ -100,8 +100,8 @@ def clean_lines(lines):
 
 if __name__ == '__main__':
   if not _testmod().failed:
-    print "Success!"
-  print ("http://chart.googleapis.com/chart?chs=320x200&cht=lc&chds=a&chd=t:" +
+    print("Success!")
+  print(("http://chart.googleapis.com/chart?chs=320x200&cht=lc&chds=a&chd=t:" +)
          make_chart_url_data(parsed_measurements(["2012-01-01 8.5",
                                                   "2012-01-02 8.1",
                                                   "2012-01-03 7.5",

@@ -48,7 +48,7 @@ def make_stuff_printer(stuff):
   # The inner function has access to the "stuff"
   # variable passed into the outer function.
   def stuff_printer():
-    print stuff
+    print(stuff)
 
   # Functions are just objects. If we don't call it,
   # it's just another thing to pass around.
@@ -68,7 +68,7 @@ for x in range(10):
 
 # Now we have a list of functions, all of which will
 # output something different.
-print printers
+print(printers)
 
 # Let's call them all and see if they remember the
 # state of the world when they were created.

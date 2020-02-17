@@ -10,14 +10,17 @@ _produce_ it.
 In this environment, you can access a virtual filesystem
 that is part of the in-browser interpreter.
 Let's do something silly: let's get
-all of the lines of the Python |string| module
-and print out the ones that contain comments.
+all of the lines of a fake file (created at the
+bottom of the code) and print out the ones that
+contain comments.
 
-To do this, we'll use the builtin |open| function.
-It takes a filename as an argument and returns a
-"file-like" object. In Python-speak, this means it
-supports some basic things like |read|, |write|
-(if writeable), and _iteration_.
+To do this, we would normally use the builtin
+|open| function. It takes a filename as an
+argument and returns a "file-like" object. In
+Python-speak, this means it supports some basic
+things like |read|, |write| (if writeable), and
+_iteration_. In this example, we use |StringIO|
+to create a file-like thing from a string.
 
 Because file objects are **iterable**, they can be
 used as the sequence in a |for| loop. When used
@@ -36,10 +39,30 @@ There is also |strip|, which strips it from both sides.
 
 __doc__ = """Files: Opening the Code"""
 
-f = open('lib/pypyjs/lib_pypy/string.py')
+# Normally we use the open function to open a file.
+# In the browser environment, that doesn't work
+# as well, so we have provided an in-memory file
+# called "myfile".
+#
+# If you were to open it in regular Python, it
+# might look something like this:
+# myfile = open('myfile.txt')
 
-for line in f:
-  if line.lstrip().startswith('#'):  # ignore leading space
-    print line.rstrip()  # strip trailing space, including \n.
+def main():
+    for line in myfile:
+      if line.lstrip().startswith('#'):  # ignore leading space
+        print(line.rstrip())  # strip trailing space, including \n.
 
-f.close()
+    myfile.close()
+
+
+# Setup for the above.
+if __name__ == '__main__':
+    import io
+    myfile = io.StringIO('''This is a file
+full of lines
+each containing some text
+# some start with comment leaders
+most aren't comments''')
+
+    main()

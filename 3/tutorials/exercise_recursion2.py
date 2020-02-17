@@ -37,16 +37,7 @@ Bonus Work
   smaller slices.
 """
 
-__doc__ = """Compute the Nth Fibonacci Number.
-
->>> fibonacci(0)
-1
-
->>> fibonacci(6)
-13
-
->>> fibonacci(7)
-21
+__doc__ = """Compute the Nth Fibonacci Number using recursion.
 """
 
 def fibonacci(n):
@@ -56,7 +47,6 @@ def fibonacci(n):
   # TODO: Fibonacci sequence
 
 
-
-
-if _testmod().failed == 0:
-  print "Success!"
+_assert_equal(1, fibonacci(0))
+_assert_equal(13, fibonacci(6))
+_assert_equal(21, fibonacci(7))

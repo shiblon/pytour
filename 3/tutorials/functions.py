@@ -39,7 +39,7 @@ to pretend.
 
 Exercises
 
-- Put a |print| statement into the |swapped| function.
+- Put a |print| function into the |swapped| function.
   Call it without assigning its result to anything.
 
 - Change the |ordered| function to use |else|
@@ -58,13 +58,13 @@ Exercises
 # As a *side effect*, it also prints what it is
 # doing.
 def times3(x):
-  print "Hey - I'm multiplying {} by 3".format(x)
+  print("Hey - I'm multiplying {} by 3".format(x))
   return x * 3
 
 # Now that times3 is defined, we can call it as
 # much as we like:
-print times3(12)
-print times3(6)
+print(times3(12))
+print(times3(6))
 
 # A function that returns its two arguments
 # swapped. Note that it returns two values by
@@ -82,16 +82,16 @@ def ordered(a, b):
     return b, a
   return a, b
 
-print "swapping", swapped(10, 20)
-print "swapping", swapped('hello', 'aardvark')
+print("swapping", swapped(10, 20))
+print("swapping", swapped('hello', 'aardvark'))
 
-print "ordering", ordered('more', 'less')
-print "ordering", ordered((1,3,5), (1,2))
+print("ordering", ordered('more', 'less'))
+print("ordering", ordered((1,3,5), (1,2)))
 
 # When passing tuples *out* of a function, you can
 # "unpack" them into new variables in one step.
 x, y = swapped(1, 2)
-print "unpacked", x, y
+print("unpacked", x, y)
 
 # Wait, why doesn't this work?
-print "ordered, swapped", ordered(swapped(1, 2))
+print("ordered, swapped", ordered(swapped(1, 2)))

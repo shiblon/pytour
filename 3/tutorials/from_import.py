@@ -33,6 +33,6 @@ see below.
 
 from math import pi, e
 
-print "I know the digits of 'pi' just fine:", pi
-print
-print "Another beautiful, naturally occurring number:", e
+print("I know the digits of 'pi' just fine:", pi)
+print()
+print("Another beautiful, naturally occurring number:", e)

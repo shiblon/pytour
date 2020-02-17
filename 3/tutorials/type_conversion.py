@@ -40,20 +40,7 @@ Bonus Work
   help for |datetime.datetime|.
 """
 
-__doc__ = """Convert lines 'date measurement' into pairs.
-
->>> lines = ['2012-10-10 5.3', '2012-10-11 5.4']
-
->>> for d, w in parsed_measurements(lines):
-...   print type(d), d, type(w), w
-<class 'datetime.datetime'> 2012-10-10 00:00:00 <type 'float'> 5.3
-<class 'datetime.datetime'> 2012-10-11 00:00:00 <type 'float'> 5.4
-
->>> for d, w in parsed_measurements(lines):
-...   print d.strftime("%d/%m/%Y"), w
-10/10/2012 5.3
-11/10/2012 5.4
-"""
+__doc__ = """Convert lines 'date measurement' into pairs."""
 
 # Not a module, but seriously? Who wants to type
 # "datetime.datetime.stuff" all the time?
@@ -88,5 +75,7 @@ def clean_lines(lines):
 
 
 if __name__ == "__main__":
-  if _testmod().failed == 0:
-    print "Success!"
+  lines = ['2012-10-10 5.3', '2012-10-11 5.4']
+  _assert_equal(['10/10/2012 5.3', '11/10/2012 5.4'],
+                ['{} {}'.format(d.strftime('%d/%m/%Y'), w)
+                 for d, w in parsed_measurements(lines)])

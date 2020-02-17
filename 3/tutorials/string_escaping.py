@@ -34,11 +34,8 @@ This multi-line string is delimited with triple
 of them (otherwise the string would end early).
 """
 
-print "This has a double quote \" inside."
+print("This has a double quote \" inside.")
 
-print 'This has a single quote \' inside.'
+print('This has a single quote \' inside.')
 
-print "This has a second line:\n  And this is it."
-
-print
-print __doc__ # Where is the backslash?
+print("This has a second line:\n  And this is it.")

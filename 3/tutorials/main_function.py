@@ -34,7 +34,7 @@ Exercises
 
 - Print |__name__|.
 
-- Now |import math| and print |math.__name__|.
+- Now |import math| and |print(math.__name__)|.
 """
 
 __doc__ = """Main Functions Demo
@@ -53,7 +53,7 @@ provide stuff for other people to use).
 
 
 def main():
-  print "Here is where we do the *real* work."
+  print("Here is where we do the *real* work.")
 
 
 if __name__ == '__main__':

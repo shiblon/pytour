@@ -49,23 +49,13 @@ that the dates are in strictly ascending order.
   2012-11-12 9.4
   2012-11-13 9.1
 
-Blank lines and comment lines are also allowed. See the tests here.
-
->>> parse_measurements(['  2012-10-10 5.4 \\n',
-...                     ' # comment!\\n',
-...                     '2012-10-11 5.3'])
-['2012-10-10', '5.4']
-['2012-10-11', '5.3']
->>> parse_measurements(['2012-10-10 5.4', '2012-10-09 5.3'])
-['2012-10-10', '5.4']
-Traceback (most recent call last):
-...
-ValueError: Non-increasing dates: 2012-10-10 -> 2012-10-09
+Blank lines and comment lines are also allowed. See the tests.
 """
 
 def parse_measurements(lines):
   """Parse date-measurement entries from lines. See docs above."""
   last_date = ""  # less than all other strings
+  measurements = []
   for line in lines:
     # TODO:
     # - Strip each line (using line = line.strip())
@@ -82,9 +72,14 @@ def parse_measurements(lines):
     # - Don't forget to set last_date down at the
     #   bottom, here! (last_date = date).
 
-    print [date, measurement]
+    measurements.append([date, measurement])
+
+  return measurements
 
 
 if __name__ == '__main__':
-  if _testmod().failed == 0:
-    print "Success!"
+  _assert_equal([['2012-10-10', '5.4'],['2012-10-11', '5.3']],
+                parse_measurements(['  2012-10-10 5.4 \n',
+                                    ' # comment!\n',
+                                    '2012-10-11 5.3']))
+  _assert_raises(ValueError, parse_measurements, ['2012-10-10 5.4', '2012-10-09 5.3'])

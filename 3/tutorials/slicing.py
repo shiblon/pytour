@@ -36,34 +36,35 @@ Exercises
   list.
 
 """
-# The range(10) function produces all numbers in [0,10)
+# The range(10) is a generator of numbers in [0,10)
 # (like slices, the right endpoint is excluded).
-numbers = range(10)
-print numbers
+# We make it a full list here so we can play.
+numbers = list(range(10))
+print(numbers)
 
 # A simple slice.
-print "3:8", numbers[3:8]
+print("3:8", numbers[3:8])
 
 # A slice containing one element.
-print "2:3", numbers[2:3]  # just one element
+print("2:3", numbers[2:3])  # just one element
 
 # But it's really useful because you can assign to
 # it.
 numbers[2:3] = [11, 12, 13, 14]
-print numbers
+print(numbers)
 
 # Even an empty slice is useful for assignment:
 a = [1, 2, 5, 6]
 a[2:2] = [3, 4]
-print "Assigned to empty slice and got", a
+print("Assigned to empty slice and got", a)
 
 # If you omit one of the slice numbers, it defaults to
 # the corresponding endpoint. Negative values work,
 # too.
-print "from the beginning to 4", numbers[:4]
-print "all but the last two", numbers[:-2]
-print "from 3 to the end", numbers[3:]
+print("from the beginning to 4", numbers[:4])
+print("all but the last two", numbers[:-2])
+print("from 3 to the end", numbers[3:])
 
-print "everything - a complete copy", numbers[:]
+print("everything - a complete copy", numbers[:])
 
-print "every other element", numbers[::2]
+print("every other element", numbers[::2])

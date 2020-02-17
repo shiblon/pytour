@@ -36,19 +36,11 @@ Exercises
   second |TODO|.
 """
 
-__doc__ = """Sum a List With Recursion
+__doc__ = """Sum a List With Recursion.
 
->>> add_all([])
-0
-
->>> add_all([1])
-1
-
->>> add_all([3, 4])
-7
-
->>> add_all(range(1, 11))
-55
+Note that there is a built-in sum function. Feel
+free to use that to check your work, but implement
+this using recursion.
 """
 
 def add_all(seq):
@@ -65,5 +57,7 @@ def add_all(seq):
   # return seq[-1] + add_all(seq[:-1])
 
 
-if _testmod().failed == 0:
-  print "Success!"
+_assert_equal(0, add_all([]))
+_assert_equal(1, add_all([1]))
+_assert_equal(7, add_all([3, 4]))
+_assert_equal(55, add_all(list(range(1, 11))))

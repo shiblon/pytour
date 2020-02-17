@@ -53,10 +53,10 @@ def main():
   # uses sys.argv.
   args = parser.parse_args()
 
-  print args
-  print args.output
-  print args.input_file
-  print args.dryrun
+  print(args)
+  print(args.output)
+  print(args.input_file)
+  print(args.dryrun)
 
 
 # Pay no attention to the man behind the curtain.

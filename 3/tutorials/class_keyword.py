@@ -11,11 +11,10 @@ To create your own sort of class in Python, you
 use a |class| declaration as shown in the sample
 code. The declaration includes the name of your
 class, and a list of other classes that you
-**inherit** from. In Python 2, this is often just
-|object| (in Python 3 you can omit it to inherit
-from |object| by default):
+**inherit** from. If omitted, it assumes you are
+inheriting from |object|.
 
-  class MyClassName(object):
+  class MyClassName:
 
 The body of the class, like in other Python
 scopes, is indented below the declaration. Take a
@@ -39,7 +38,7 @@ corresponding special methods. Take a look and see
 if you can tell how it works.
 """
 
-class Shoe(object):
+class Shoe:
   """Class docstring - tell what this *is*."""
 
   def __init__(self, color, lace_holes, us_size, weight_oz):
@@ -69,5 +68,5 @@ class Shoe(object):
 # "Shoe" is a class. Let's create a specific
 # instance of it and do stuff with it:
 new_shoe = Shoe("red", 10, "8.5 children's", 6)
-print repr(new_shoe)
-print new_shoe
+print(repr(new_shoe))
+print(new_shoe)

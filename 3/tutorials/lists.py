@@ -38,26 +38,28 @@ Exercises
 
 # Create a list using [] notation.
 a = [7, 3, 1, 9]
-print a
-print "a has", len(a), "elements"
+print(a)
+print("a has", len(a), "elements")
 
 # Indexing works as expected.
-print "third element", a[2]
-print "last element", a[-1]
+print("third element", a[2])
+print("last element", a[-1])
 
 # List are mutable:
 a[3] = "hello"    # Change element 3.
-print a
+print(a)
 
 # And you can add to them. There are lots more of these
 # operations - see help(list).
 a.append("new value")
-print a
+print(a)
 
-# Sorting is one of those really useful list things:
-a.sort()
-print a
-
-# Extending is another:
+# Extending is another useful thing to do if you
+# have another list to add:
 a.extend(['more', 'values'])
-print a
+print(a)
+
+# If all elements in your list are comparable, you
+# can sort them (in place with .sort, or returned
+# with sorted)::
+print(sorted([1, 7, 9, 10, 3, 5]))

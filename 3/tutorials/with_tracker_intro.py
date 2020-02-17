@@ -2,26 +2,27 @@
 
 """"With" Statements, and Our Tracker
 
-Now that we've fiddled around a bit with files and
-getting web content, we know that we don't really
-need to do much more with those: they're just
-iterables over lines, or (if you call |read|), big
-long strings. We can work with line iterables or
-long strings without hitting the file system or
-even the web, so we'll mostly proceed with smaller
-in-code data.
+Now that we've fiddled around a bit with files,
+we know that we don't really need to do much more
+with those: they're just iterables over lines, or
+(if you call |read|), big long strings. We can
+work with line iterables or long strings without
+hitting the file system, so we'll continue working
+with smaller in-code data.
 
 Coming Up
 
 In the upcoming series of exercises and
 instructive slides, we'll build all of the pieces
 of a weight tracker with charts for your ... cat.
-Or dog. Or whatever politically correct and
-unembarrassing thing that you aren't allergic to.
+Or dog. Or some other unembarrassing critter or
+object that you aren't allergic to.
 
 The idea will be to (eventually) produce a nice
-chart to demonstrate to kitteh's vet that the diet
-is going well.
+chart to demonstrate to your pet's vet that the
+diet is going well. If your pet is a rock, you
+might need to take its weight over geologic time
+scales to see any progress.
 
 One More Concept
 
@@ -43,7 +44,7 @@ __doc__ = """With Statements
 The "with" statement sets up a *context*. A
 context is an opportunity to do something with a
 resource, then have it automatically cleaned up
-when you're done.
+(or something else) when you're done.
 
 Files are a great and common example of why you
 want one: opening the file provides a context -
@@ -56,9 +57,20 @@ mutexes, which you want to release after you're
 done with them.
 """
 
-import os.path
+def main():
+    # With a real file you commonly see
+    # with open(filename) as f:
+    with myfile as f:
+        print(f.read())
 
-filename = os.path.join("lib", "pypyjs", "lib_pypy", "warnings.py")
 
-with open(filename) as f:
-  print f.read()
+# Setup for the above.
+if __name__ == '__main__':
+    import io
+    myfile = io.StringIO('''This is a file
+full of lines
+each containing some text
+# some start with comment leaders
+most aren't comments''')
+
+    main()

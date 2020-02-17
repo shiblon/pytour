@@ -35,7 +35,7 @@ if you call the function on an **instance**. If
 you call it on a **class**, it is not.
 """
 
-class Shoe(object):
+class Shoe:
   """Class docstring - tell what this *is*."""
 
   def __init__(self, color, lace_holes, us_size, weight_oz):
@@ -53,7 +53,7 @@ class Shoe(object):
     self.color = new_color
 
 s = Shoe('blue', 4, '6w', 12)
-print s
+print(s)
 
 s.change_color('red')
-print s
+print(s)

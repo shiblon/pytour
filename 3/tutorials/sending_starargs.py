@@ -13,14 +13,14 @@ send its values separately.
 You can do this with an **unpacking assignment**, like this:
 
   x, y = swapped(3, 6)
-  print ordered(x, y)
+  print(ordered(x, y))
 
 Fortunately, there is another less cumbersome way
 to do it that is more convenient. If you prefix
 the argument with |*|, Python will unpack the
 value into function arguments in one step:
 
-  print ordered(*swapped(3, 6))
+  print(ordered(*swapped(3, 6)))
 
 Exercises
 
@@ -38,9 +38,9 @@ def ordered(a, b):
 
 # You can always do this via unpacking assignment:
 x, y = swapped("hi", "there")
-print ordered(x, y)
+print(ordered(x, y))
 
 # But this is easier.
-print ordered(*swapped(1, 5))
+print(ordered(*swapped(1, 5)))
 
-print swapped(*ordered(4, 2))
+print(swapped(*ordered(4, 2)))

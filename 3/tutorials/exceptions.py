@@ -37,7 +37,7 @@ Exercises
   of terminating immediately.
 """
 for x in "A pony, for me?":
-  print x,
+  print(x)
 print
 
 # Equivalent to the above is this "while" loop.
@@ -45,7 +45,7 @@ print
 range_iter = iter("No pony for you today.")
 while True:
   try:
-    print next(range_iter),
+    print(next(range_iter))
   except StopIteration as e:
     break  # end the loop early and cleanly
 print
@@ -59,11 +59,11 @@ def print_ponies(number):
     # This is not in a "try" block - so it causes
     # the function to terminate immediately.
     raise ValueError("You have a debt of {n} ponies.".format(n=number))
-  print "You have {n} ponies".format(n=number)
+  print("You have {n} ponies".format(n=number))
 
 def call_ponies(number):
   print_ponies(number)
-  print "No pony errors!"
+  print("No pony errors!")
 
 call_ponies(10)
 call_ponies(-2)

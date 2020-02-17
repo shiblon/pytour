@@ -37,7 +37,7 @@ Exercises
   return an iterator.
 """
 
-class Shoe(object):
+class Shoe:
   """Class docstring - tell what this *is*."""
 
   def __init__(self, color, lace_holes, us_size, weight_oz):
@@ -58,5 +58,5 @@ class Shoe(object):
 # "Shoe" is a class. Let's create a specific
 # instance of it and do stuff with it:
 new_shoe = Shoe("red", 10, "8.5 children's", 6)
-print repr(new_shoe)
-print new_shoe
+print(repr(new_shoe))
+print(new_shoe)

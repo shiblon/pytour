@@ -41,13 +41,13 @@ Exercises
 def star_ordered(*args):
   return sorted(args)
 
-print "ordered:", star_ordered(6, 3)
+print("ordered:", star_ordered(6, 3))
 
 # You can mix regular and star parameters, if the
 # star ones come last.
 #
 def star_mixed(a, b, *others):
-  print a, b, others
+  print(a, b, others)
 
 # Note how the arguments are printed.
 star_mixed("hi", "there,", "what's", "your", "name?")

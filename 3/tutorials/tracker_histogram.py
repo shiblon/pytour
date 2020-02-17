@@ -44,13 +44,6 @@ Measurements are just floating point values. Truncate
 differences to at most 2 decimal places. Use the
 absolute value of the difference between adjacent
 values.
-
->>> h = histogram([8.0, 8.2, 7.8, 7.9, 8.0, 7.7, 7.9, 7.6])
->>> print "\\n".join("%r: %r" % (k, v) for k, v in sorted(h.iteritems()))
-'0.10': 2
-'0.20': 2
-'0.30': 2
-'0.40': 1
 """
 
 def histogram(data):
@@ -63,5 +56,5 @@ def histogram(data):
 
 
 if __name__ == '__main__':
-  if not _testmod().failed:
-    print "Success!"
+  _assert_equal({'0.10': 2, '0.20': 2, '0.30': 2, '0.40': 1},
+                histogram([8.0, 8.2, 7.8, 7.9, 8.0, 7.7, 7.9, 7.6]))

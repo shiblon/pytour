@@ -47,12 +47,12 @@ def get_an_iterator():
     yield x
 
 
-print "Getting a list:", get_a_list()
+print("Getting a list:", get_a_list())
 
 my_iter = get_an_iterator()
 
-print "Got ... something:", my_iter
-print "Getting the next value:", next(my_iter)
-print "Looping over the rest of it:"
+print("Got ... something:", my_iter)
+print("Getting the next value:", next(my_iter))
+print("Looping over the rest of it:")
 for x in my_iter:
-  print x
+  print(x)

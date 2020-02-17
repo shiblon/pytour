@@ -24,7 +24,7 @@ Tuples, as is true of every other Python sequence,
 support **indexing**, accessing a single element
 with the |[]| notation:
 
-  print my_tuple[10]  # Get element 10.
+  print(my_tuple[10])  # Get element 10.
 
 Exercises
 
@@ -38,28 +38,28 @@ Exercises
 
 # A basic tuple.
 a = 1, 3, 'hey', 2
-print a
+print(a)
 
 # Usually you see them with parentheses:
 b = (1, 3, 'hey', 2)
-print b
-print "b has", len(b), "elements"
+print(b)
+print("b has", len(b), "elements")
 
 # Indexing is easy:
-print "first element", b[0]
-print "third element", b[2]
+print("first element", b[0])
+print("third element", b[2])
 
 # Even from the right side (the 'back'):
-print "last element", b[-1]
-print "penultimate", b[-2]
+print("last element", b[-1])
+print("penultimate", b[-2])
 
 # Parentheses are always required for the empty
 # tuple:
-print "empty", ()
+print("empty", ())
 
 # And single-element tuples have to have a comma:
-print "singleton", (5,)  # A tuple
-print "not a tuple", (5)   # A number
+print("singleton", (5,))  # A tuple
+print("not a tuple", (5))   # A number
 
 # They are immutable, though: you can't change
 # them.

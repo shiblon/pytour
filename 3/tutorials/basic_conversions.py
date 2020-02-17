@@ -35,22 +35,22 @@ Exercises
 num_str = "  178000 "
 
 # Yup, it's a string:
-print repr(num_str)
+print(repr(num_str))
 
 # Can it be an int?
-print int(num_str)  # spaces are stripped first.
+print(int(num_str))  # spaces are stripped first.
 
 # How about a float?
-print float(num_str)
+print(float(num_str))
 
 # Of course, converting between numbers works:
-print float(10)
+print(float(10))
 
 # But what happens with this?
-print int(10.5)
+print(int(10.5))
 
 # We can even make complex values from strings:
-print complex("-2+3.2j")
+print(complex("-2+3.2j"))
 
 # This won't work:
-print int("234notanumber")
+print(int("234notanumber"))

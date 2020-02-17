@@ -38,6 +38,10 @@ Exercises
 - Uncomment the |print| statements inside of |factorial|
   (above and below |smaller_problem|) to see what
   is happening.
+
+- Practice saying "recur" instead of "recurse",
+  which is not a word. Now practice feeling good
+  because you are right.
 """
 
 __doc__ = """Introduction to Recursion
@@ -62,13 +66,13 @@ See below.
 def factorial(n):
   if n <= 1:
     return 1
-  # print "before recursion", n
+  # print("before recursion", n)
   smaller_problem = factorial(n - 1)
-  # print "after recursion", n
+  # print("after recursion", n)
   return n * smaller_problem
 
 
 # This gets big fast
-print "2! =", factorial(2)
-print "7! =", factorial(7)
-print "20! =", factorial(20)
+print("2! =", factorial(2))
+print("7! =", factorial(7))
+print("20! =", factorial(20))

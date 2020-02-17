@@ -30,7 +30,7 @@ Such strings are often used to write documentation
 for modules, functions, and classes.
 """
 
-print 'Single-quoted string.'  # single quotes work
-print "Double-quoted string."  # double quotes, too
-print '''Multi-line strings may not do what you think,
-         particularly with indentation.'''
+print('Single-quoted string.')  # single quotes work
+print("Double-quoted string.")  # double quotes, too
+print('''Multi-line strings may not do what you think,
+         particularly with indentation.''')

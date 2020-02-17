@@ -48,18 +48,18 @@ a = [('a','b','c'),
      ('g','h','i'),
      ('m','n','o')]
 
-print "first two"
-print list(get2(a, 0, 1))
-print "first and last"
-print list(get2(a, 0, 2))
+print("first two")
+print(list(get2(a, 0, 1)))
+print("first and last")
+print(list(get2(a, 0, 2)))
 
 # List comprehension
-print "first two - comprehension"
-print [(x, y) for x, y, z in a]
-print "first and last - filtered"
-print [(x, z) for x, y, z in a if x < 'j']
+print("first two - comprehension")
+print([(x, y) for x, y, z in a])
+print("first and last - filtered")
+print([(x, z) for x, y, z in a if x < 'j'])
 
 # Generator comprehension
-print "raw generator", ((x, y) for x, y, _ in a)
+print("raw generator", ((x, y) for x, y, _ in a))
 # Look, Ma! No (additional) parentheses!
-print sorted((x, y) for x, y, _ in a)
+print(sorted((x, y) for x, y, _ in a))

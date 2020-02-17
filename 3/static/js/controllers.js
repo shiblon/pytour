@@ -353,11 +353,12 @@ function CodeCtrl($scope, $http, $location, $timeout) {
         var preamble = $scope._preamble + '\n' + makePythonLines($scope.code()) + '\n';
         preamble = preamble.replace('{.PREAMBLE_LENGTH}', preamble.split('\n').length);
         var code = preamble + $scope.code() + '\n';
+        // TODO: figure out how to set the special var __doc__ properly.
         // TODO: figure out localsid stuff and module meaning.
+        // TODO: figure out why syntax errors don't always make it to the doc window.
         $B.run_script(code, '__main__', 'localsid');
       } catch (err) {
-        console.log(err);
-        //$scope.addErrorText("Internal Error: " + $scope.prettyError(err));
+        console.error("run_script exception: ", err);
       } finally {
         done();
       }

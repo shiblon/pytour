@@ -4,6 +4,7 @@
 
 Python has a lot of stuff built in that you can
 just use. Much of it is exposed through **functions**.
+You have already seen a common one: |print|.
 
 A function is _called_ by placing |()| after its
 name. If it accepts **arguments**, then they go
@@ -77,12 +78,12 @@ len("hi")
 
 # Assign 'length' to the return value of 'len'.
 length = len("how long is this anyway?")
-print "length =", length
+print("length =", length)
 
 # We can print it directly, too.
-print "The length is", len("hi there")
+print("The length is", len("hi there"))
 
 # The repr function can be useful to see what's
 # really in a string. It adds quotes for you.
-print "Just print:", "Hi there"
-print "repr print:", repr("Hi there")
+print("Just print:", "Hi there")
+print("repr print:", repr("Hi there"))

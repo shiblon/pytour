@@ -48,10 +48,6 @@ __doc__ = """Some notes on 'parsed_measurements'.
 
 This passes right now. Your job is to convert the
 function to a generator and keep it passing.
-
->>> list(parsed_measurements(['2012-10-10 5.4',
-...                           '2012-10-11 5.3']))
-[('2012-10-10', '5.4'), ('2012-10-11', '5.3')]
 """
 
 
@@ -80,5 +76,6 @@ def parsed_measurements(lines):
 
 
 if __name__ == '__main__':
-  if _testmod().failed == 0:
-    print "Success!"
+  _assert_equal([('2012-10-10', '5.4'), ('2012-10-11', '5.3')],
+                list(parsed_measurements(['2012-10-10 5.4',
+                                          '2012-10-11 5.3'])))

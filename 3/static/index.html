@@ -23,13 +23,16 @@
 <!-- End project includes -->
 </head>
 <body ng-controller="CodeCtrl" onload="brython({debug: 0})">
+<script type="text/python">
+  print("hey there from script tag")
+</script>
 <div id="diff" ng-class="{'hidden': !inDiff}">
   <div id="diffview"></div>
 </div>
 <div id="main-tour" ng-class="{'hidden': inDiff}">
 <div id="content_container" ng-class="{'collapsed': contentCollapsed}">
   <div id="toc-trigger">
-    <a href="http://python.org/doc/" target="pydocs">Python Docs</a>
+    <a href="http://docs.python.org/3/" target="pydocs">Python Docs</a>
   </div>
   <div id="content-header">
     <h1>Interactive Python Tutorial <span class="toc" ng-class="{'toc-showing': tocShowing}" ng-click="tocShowing = !tocShowing" ng-bind-html="tocShowing | inplaceif : '&#x25b2; TOC' : '&#x25bc; TOC' ">&#x25b2;&#x25bc; TOC</span></h1>
@@ -96,15 +99,35 @@
        To change these chapter contents.
   -->
   <div name="__preamble__">
+    from html import escape
     import re
     import sys
 
-    from browser import console, document
+    from browser import console, document, window
     from browser import html
 
 
+    def help(*args, **kargs):
+        print("help() not implemented in this environment", file=sys.stderr)
+
+
     _PREAMBLE_LENGTH = {.PREAMBLE_LENGTH} # fill in from controllers.js.
-    _EXC_LINE_NO = re.compile(r'\bline (\d+)$', re.MULTILINE)
+    _EXC_LINE_NO = re.compile(r'\bline (\d+)', re.MULTILINE)
+
+
+    def _assert_equal(want, got):
+        if want != got:
+            print("assert_equal failed: want:\n\t{!r}\ngot:\n\t{!r}".format(want, got), file=sys.stderr)
+
+
+    def _assert_raises(errtype, call, *args, **kargs):
+        try:
+            call(*args, **kargs)
+            print("assert_raises failed: no exception thrown, {} expected".format(errtype), file=sys.stderr)
+        except Exception as e:
+            if not isinstance(e, errtype):
+                print("assert_raises failed: want error type {!r}, got\n{}".format(errtype, e), file=sys.stderr)
+            return
 
 
     class __out__:
@@ -115,33 +138,27 @@
             self.last_text = None
 
         def write(self, text):
-            if text == self.last_text:
+            if self.el_class == 'stderr' and text == self.last_text:
                 console.log('Repeated text found, not sending to output window.')
                 return 0
 
             # TODO: figure out why brython repeats errors when stdout/stderr are
-            # overridden like this.
+            # overridden. We usually get 3 repeats.
             self.last_text = text
 
             if self.el_class == 'stderr':
                 def line_rewrite(match):
-                    console.log('in match');
                     if not match: return
                     lno = int(match.group(1))
                     if lno &lt; _PREAMBLE_LENGTH:
-                        return 'line {}'.format(lno)
+                        return 'line preamble:{}'.format(lno)
                     return 'line {}'.format(lno - _PREAMBLE_LENGTH + 1)
 
-                console.log('before', text)
-                try:
-                    text = _EXC_LINE_NO.sub(line_rewrite, text)
-                except Exception as e:
-                    console.error(e)
-                console.log('after', text)
+                text = _EXC_LINE_NO.sub(line_rewrite, text)
 
             # TODO: if an exception, look for lines greater than preamble length,
             # and update offset.
-            self.out_el &lt;= html.PRE(text, Class=' '.join(['output-entry', self.el_class]))
+            self.out_el &lt;= html.PRE(escape(text), Class=' '.join(['output-entry', self.el_class]))
             return len(text)
 
 
@@ -305,10 +322,10 @@
     for modules, functions, and classes.
     """
 
-    print 'Single-quoted string.'  # single quotes work
-    print "Double-quoted string."  # double quotes, too
-    print '''Multi-line strings may not do what you think,
-             particularly with indentation.'''
+    print('Single-quoted string.')  # single quotes work
+    print("Double-quoted string.")  # double quotes, too
+    print('''Multi-line strings may not do what you think,
+             particularly with indentation.''')
   </div>
   <div name="string_formatting">
     """String Formatting
@@ -358,31 +375,28 @@
 
     # If you only have one format specifier, and the right
     # side is also a string, you can omit the tuple syntax.
-    print "Hi there, %s!" % "you"
+    print("Hi there, %s!" % "you")
 
     # Integers get to use %d (for "decimal" - %x would be
     # "hex").
-    print "Base 10: %d, Base 16: %x, Base 16: %X" % (30, 30, 30)
+    print("Base 10: %d, Base 16: %x, Base 16: %X" % (30, 30, 30))
 
     # Floating point is %f or %g, and I can never remember
     # which one I want, so I go with %f most of the time
     # unless it frustrates me enough to dig through the
     # docs.
-    print "A floating point number: %f" % (math.pi)
+    print("A floating point number: %f" % (math.pi))
 
     # You can also specify width and such with numeric
     # types.
-    print "A width-constrained number: %.2f" % (math.pi)
+    print("A width-constrained number: %.2f" % (math.pi))
 
     # And, you can get the repr of anything by using %r.
-    print "The repr of a few things: %r %r %r %r" % ('hi', 26j, 17.4, len)
+    print("The repr of a few things: %r %r %r %r" % ('hi', 26j, 17.4, len))
 
-    # There is also a whole new way of formatting strings
-    # that is really nice and super cool and has loads of
-    # flexibility and documentation: str.format.
-    # Definitely look up the docs on this. It has a lot of
-    # nice features, and it's the Way Of The Future (TM).
-    print "This is the {0}th time of {1}.".format(17, 30)
+    # The format function on strings is the best way
+    # to do this.
+    print("This is the {0}th time of {1}.".format(17, 30))
   </div>
   <div name="module_docstrings">
     """Module Docstrings
@@ -400,10 +414,6 @@
     human-readable documentation for everything you
     do. We'll make use of them throughout the rest of
     the tutorial.
-
-    Exercises
-
-    - Try printing the special variable |__doc__|.
     """
 
     __doc__ = """This is a module docstring.
@@ -412,8 +422,6 @@
     editor makes up a single module, a module that you
     define by typing Python statements.
     """
-
-    print "This is a module - where's the documentation?"
   </div>
   <div name="string_escaping">
     """String Escaping
@@ -450,20 +458,18 @@
     of them (otherwise the string would end early).
     """
 
-    print "This has a double quote \" inside."
+    print("This has a double quote \" inside.")
 
-    print 'This has a single quote \' inside.'
+    print('This has a single quote \' inside.')
 
-    print "This has a second line:\n  And this is it."
-
-    print
-    print __doc__ # Where is the backslash?
+    print("This has a second line:\n  And this is it.")
   </div>
   <div name="calling_functions">
     """Calling Functions
 
     Python has a lot of stuff built in that you can
     just use. Much of it is exposed through **functions**.
+    You have already seen a common one: |print|.
 
     A function is _called_ by placing |()| after its
     name. If it accepts **arguments**, then they go
@@ -537,15 +543,15 @@
 
     # Assign 'length' to the return value of 'len'.
     length = len("how long is this anyway?")
-    print "length =", length
+    print("length =", length)
 
     # We can print it directly, too.
-    print "The length is", len("hi there")
+    print("The length is", len("hi there"))
 
     # The repr function can be useful to see what's
     # really in a string. It adds quotes for you.
-    print "Just print:", "Hi there"
-    print "repr print:", repr("Hi there")
+    print("Just print:", "Hi there")
+    print("repr print:", repr("Hi there"))
   </div>
   <div name="numbers">
     """Numbers
@@ -582,28 +588,28 @@
     """
 
     # Basic numeric types.
-    print "I'm an int:", 10
-    print "I'm a float:", 2.79
-    print "I'm complex:", 3.14 + 1j
+    print("I'm an int:", 10)
+    print("I'm a float:", 2.79)
+    print("I'm complex:", 3.14 + 1j)
 
     # Math is easy.
 
     a = 1000.0
 
     # Some basic math operators:
-    print
-    print "Basic Math Operators:"
-    print "Div:", a / 10.0  # Divide by 10
-    print "Mul:", a * 10    # Multiply by 10
-    print "Add:", a + 12    # Add 12
-    print "Sub:", a - 15    # Subtract 15
-    print "Exp:", a ** 5    # Take a to the 5th power.
+    print()
+    print("Basic Math Operators:")
+    print("Div:", a / 10.0)  # Divide by 10
+    print("Mul:", a * 10)    # Multiply by 10
+    print("Add:", a + 12)    # Add 12
+    print("Sub:", a - 15)    # Subtract 15
+    print("Exp:", a ** 5)    # Take a to the 5th power.
 
     # Grouping:
-    print
-    print "Parentheses:"
-    print "Multiplication before addition:", 3 + 2 * 5
-    print "Force addition to come first:", (3 + 2) * 5
+    print()
+    print("Parentheses:")
+    print("Multiplication before addition:", 3 + 2 * 5)
+    print("Force addition to come first:", (3 + 2) * 5)
   </div>
   <div name="math_module">
     """Math, Modules, and Namespaces
@@ -652,11 +658,11 @@
     import math
 
     # My favorite constants.
-    print math.pi
-    print math.e
+    print(math.pi)
+    print(math.e)
 
     # Another important one (a square root).
-    print math.sqrt(2)
+    print(math.sqrt(2))
   </div>
   <div name="from_import">
     """More on Importing
@@ -692,21 +698,20 @@
 
     from math import pi, e
 
-    print "I know the digits of 'pi' just fine:", pi
-    print
-    print "Another beautiful, naturally occurring number:", e
+    print("I know the digits of 'pi' just fine:", pi)
+    print()
+    print("Another beautiful, naturally occurring number:", e)
   </div>
   <div name="help">
     """Getting Help
 
-    One function that is built into the interactive
-    Python interpreter is |help|. This is a very
+    One function that is built into out-of-browser
+    Python interpreters is |help|. This is a very
     useful function, because it gives you basic
     documentation on just about anything you want.
 
     For this in-browser tutorial, the *help* function
-    is included, just to give you a feel for what it
-    does.
+    is not functional.
 
     You can also run "pydoc" from the commandline, or
     access http://python.org/doc/ directly or from the
@@ -714,30 +719,17 @@
 
     Exercises
 
-    - Go to the *Docs* link, find Python 2.x, Library
+    - Go to the *Docs* link, find Python 3.x, Library
       Reference, and click on
-      |Built-in Functions| (direct link here: https://docs.python.org/2/library/functions.html).
-
-    - Print |help(int)|. Did it output what you expected?
-
-    - Import |math| and run |help| on the module.
-      Compare with |dir|.
+      |Built-in Functions| (direct link here: https://docs.python.org/3/library/functions.html).
     """
 
     __doc__ = """Getting Help
 
-    Help is available by calling the 'help' function.
-    It can sometimes be more useful than 'dir'.
+    Help is available in normal Python interpreters by
+    calling the 'help' function. It can sometimes be
+    more useful than 'dir'.
     """
-
-    print "Help for 'len'"
-    help(len)
-
-    print "Help for symbols"
-    help('symbols')
-
-    print "Help for keywords"
-    help('keywords')
   </div>
   <div name="basic_conversions">
     """Basic Conversions
@@ -775,25 +767,25 @@
     num_str = "  178000 "
 
     # Yup, it's a string:
-    print repr(num_str)
+    print(repr(num_str))
 
     # Can it be an int?
-    print int(num_str)  # spaces are stripped first.
+    print(int(num_str))  # spaces are stripped first.
 
     # How about a float?
-    print float(num_str)
+    print(float(num_str))
 
     # Of course, converting between numbers works:
-    print float(10)
+    print(float(10))
 
     # But what happens with this?
-    print int(10.5)
+    print(int(10.5))
 
     # We can even make complex values from strings:
-    print complex("-2+3.2j")
+    print(complex("-2+3.2j"))
 
     # This won't work:
-    print int("234notanumber")
+    print(int("234notanumber"))
   </div>
   <div name="equality_operators">
     """Equality
@@ -834,30 +826,30 @@
       like |5 &lt; 7| or |'hello' &gt;= 'hello there'|.
     """
 
-    print "Strings are not equal to integers."
-    print "10" != 10   # True
-    print 10 == 5 + 5  # True
+    print("Strings are not equal to integers.")
+    print("10" != 10)   # True
+    print(10 == 5 + 5)  # True
 
-    print "Variable assignment satisfies 'is'"
+    print("Variable assignment satisfies 'is'")
     a = 1543
     b = a
 
-    print a == b    # Obviously true - same data.
-    print a != a+1  # Indeed.
-    print a is b    # Also true. Assignment satisfies 'is'.
+    print(a == b)    # Obviously true - same data.
+    print(a != a+1)  # Indeed.
+    print(a is b)    # Also true. Assignment satisfies 'is'.
 
     # Performing an operation on data like integers or
     # strings produces a *new thing*, even if the data is
     # the same.
-    print "Same data, not same thingy."
+    print("Same data, not same thing.")
     b = a + 0
 
-    print a == b    # Still true.
-    print a is b    # No longer true!
+    print(a == b)    # Still true.
+    print(a is b)    # No longer true in some implementations!
 
-    print "not None:", a is not None  # A very common kind of test.
+    print("not None:", a is not None)  # A very common kind of test.
     c = None
-    print c is not None  # False
+    print(c is not None)  # False
   </div>
   <div name="tuples">
     """Tuples
@@ -884,7 +876,7 @@
     support **indexing**, accessing a single element
     with the |[]| notation:
 
-      print my_tuple[10]  # Get element 10.
+      print(my_tuple[10])  # Get element 10.
 
     Exercises
 
@@ -898,28 +890,28 @@
 
     # A basic tuple.
     a = 1, 3, 'hey', 2
-    print a
+    print(a)
 
     # Usually you see them with parentheses:
     b = (1, 3, 'hey', 2)
-    print b
-    print "b has", len(b), "elements"
+    print(b)
+    print("b has", len(b), "elements")
 
     # Indexing is easy:
-    print "first element", b[0]
-    print "third element", b[2]
+    print("first element", b[0])
+    print("third element", b[2])
 
     # Even from the right side (the 'back'):
-    print "last element", b[-1]
-    print "penultimate", b[-2]
+    print("last element", b[-1])
+    print("penultimate", b[-2])
 
     # Parentheses are always required for the empty
     # tuple:
-    print "empty", ()
+    print("empty", ())
 
     # And single-element tuples have to have a comma:
-    print "singleton", (5,)  # A tuple
-    print "not a tuple", (5)   # A number
+    print("singleton", (5,))  # A tuple
+    print("not a tuple", (5))   # A number
 
     # They are immutable, though: you can't change
     # them.
@@ -964,29 +956,31 @@
 
     # Create a list using [] notation.
     a = [7, 3, 1, 9]
-    print a
-    print "a has", len(a), "elements"
+    print(a)
+    print("a has", len(a), "elements")
 
     # Indexing works as expected.
-    print "third element", a[2]
-    print "last element", a[-1]
+    print("third element", a[2])
+    print("last element", a[-1])
 
     # List are mutable:
     a[3] = "hello"    # Change element 3.
-    print a
+    print(a)
 
     # And you can add to them. There are lots more of these
     # operations - see help(list).
     a.append("new value")
-    print a
+    print(a)
 
-    # Sorting is one of those really useful list things:
-    a.sort()
-    print a
-
-    # Extending is another:
+    # Extending is another useful thing to do if you
+    # have another list to add:
     a.extend(['more', 'values'])
-    print a
+    print(a)
+
+    # If all elements in your list are comparable, you
+    # can sort them (in place with .sort, or returned
+    # with sorted)::
+    print(sorted([1, 7, 9, 10, 3, 5]))
   </div>
   <div name="slicing">
     """Slicing
@@ -1025,37 +1019,38 @@
       list.
 
     """
-    # The range(10) function produces all numbers in [0,10)
+    # The range(10) is a generator of numbers in [0,10)
     # (like slices, the right endpoint is excluded).
-    numbers = range(10)
-    print numbers
+    # We make it a full list here so we can play.
+    numbers = list(range(10))
+    print(numbers)
 
     # A simple slice.
-    print "3:8", numbers[3:8]
+    print("3:8", numbers[3:8])
 
     # A slice containing one element.
-    print "2:3", numbers[2:3]  # just one element
+    print("2:3", numbers[2:3])  # just one element
 
     # But it's really useful because you can assign to
     # it.
     numbers[2:3] = [11, 12, 13, 14]
-    print numbers
+    print(numbers)
 
     # Even an empty slice is useful for assignment:
     a = [1, 2, 5, 6]
     a[2:2] = [3, 4]
-    print "Assigned to empty slice and got", a
+    print("Assigned to empty slice and got", a)
 
     # If you omit one of the slice numbers, it defaults to
     # the corresponding endpoint. Negative values work,
     # too.
-    print "from the beginning to 4", numbers[:4]
-    print "all but the last two", numbers[:-2]
-    print "from 3 to the end", numbers[3:]
+    print("from the beginning to 4", numbers[:4])
+    print("all but the last two", numbers[:-2])
+    print("from 3 to the end", numbers[3:])
 
-    print "everything - a complete copy", numbers[:]
+    print("everything - a complete copy", numbers[:])
 
-    print "every other element", numbers[::2]
+    print("every other element", numbers[::2])
   </div>
   <div name="dictionaries">
     """Dictionaries
@@ -1093,35 +1088,35 @@
 
     number_of_children = {"John": 6,
                           "Mary": 2}  # Empty is also allowed.
-    print "After initialization:", number_of_children
-    print "John has", number_of_children["John"], "children"
+    print("After initialization:", number_of_children)
+    print("John has", number_of_children["John"], "children")
 
     # You can also create new items with index assignment:
     number_of_children["George"] = 12
-    print "Added George:", number_of_children
+    print("Added George:", number_of_children)
     print
 
     # There are many useful methods in dictionaries.
-    print number_of_children.keys()   # list of keys
-    print number_of_children.values() # list of values
-    print number_of_children.items()  # list of key,value pairs
+    print(number_of_children.keys())   # iterable keys
+    print(number_of_children.values()) # iterable values
+    print(number_of_children.items())  # iterable key,value pairs
     print
 
     # The 'in' operator always applies to the keys,
     # never the values.
-    print "George" in number_of_children # True
-    print "Simon" in number_of_children  # False
+    print("George" in number_of_children) # True
+    print("Simon" in number_of_children)  # False
     print
 
     # Using the dict type to create a dictionary:
     d1 = dict()
     d1["key1"] = "value1"
-    print d1
+    print(d1)
 
     # You can also create a dictionary from a sequence
     # of key/value pairs using the dict callable type:
     d2 = dict([("K1", "v1"), ("K2", "V2")])
-    print d2
+    print(d2)
   </div>
   <div name="if_elif_else">
     """'If' Statements
@@ -1154,20 +1149,20 @@
     - Add an |elif a == b:| block between |if| and |else|.
       What does it do?
 
-    - Move the |print| statement for the string test
+    - Move the |print| function for the string test
       into an |else| clause, and make the |if| clause
       empty using the |pass| keyword as its body. What
       happens?
     """
 
     if "George" &lt; "Mary":
-      print "Alphabetic sorting works!"
-      print "And we can say more if we want, too!"
+      print("Alphabetic sorting works!")
+      print("And we can say more if we want, too!")
 
     if 0 == 1:
-      print "Math is busted."
-    print "This unindented code always runs"
-    print "because it is not in the 'if' block."
+      print("Math is busted.")
+    print("This unindented code always runs")
+    print("because it is not in the 'if' block.")
 
     a = 5
     b = 10
@@ -1175,7 +1170,7 @@
     if a &gt; b:
       pass  # Do nothing.
     else:
-      print 'Math still works!'
+      print('Math still works!')
   </div>
   <div name="nonzero">
     """A Tale of Truth
@@ -1207,8 +1202,8 @@
       after mathematician George Boole. Try calling
       the |bool| builtin to find out whether something
       evaluates to |True| or |False|. For example, try
-      |print bool(0.0)| or a tiny value like |print
-      bool(1e-20)|.
+      |print(bool(0.0))| or a tiny value like
+      |print(bool(1e-20))|.
 
     - Try evaluating |bool('0')|. Is it what you
       expected? Why?
@@ -1218,13 +1213,13 @@
     empty_string = ""
 
     if not empty_list:
-      print "Yep, the list is empty"
+      print("Yep, the list is empty")
 
     if empty_string:
-      print "The string has values"
+      print("The string has values")
 
     if [0]:
-      print "The list is not empty"
+      print("The list is not empty")
   </div>
   <div name="functions">
     """Functions
@@ -1266,7 +1261,7 @@
 
     Exercises
 
-    - Put a |print| statement into the |swapped| function.
+    - Put a |print| function into the |swapped| function.
       Call it without assigning its result to anything.
 
     - Change the |ordered| function to use |else|
@@ -1285,13 +1280,13 @@
     # As a *side effect*, it also prints what it is
     # doing.
     def times3(x):
-      print "Hey - I'm multiplying {} by 3".format(x)
+      print("Hey - I'm multiplying {} by 3".format(x))
       return x * 3
 
     # Now that times3 is defined, we can call it as
     # much as we like:
-    print times3(12)
-    print times3(6)
+    print(times3(12))
+    print(times3(6))
 
     # A function that returns its two arguments
     # swapped. Note that it returns two values by
@@ -1309,19 +1304,19 @@
         return b, a
       return a, b
 
-    print "swapping", swapped(10, 20)
-    print "swapping", swapped('hello', 'aardvark')
+    print("swapping", swapped(10, 20))
+    print("swapping", swapped('hello', 'aardvark'))
 
-    print "ordering", ordered('more', 'less')
-    print "ordering", ordered((1,3,5), (1,2))
+    print("ordering", ordered('more', 'less'))
+    print("ordering", ordered((1,3,5), (1,2)))
 
     # When passing tuples *out* of a function, you can
     # "unpack" them into new variables in one step.
     x, y = swapped(1, 2)
-    print "unpacked", x, y
+    print("unpacked", x, y)
 
     # Wait, why doesn't this work?
-    print "ordered, swapped", ordered(swapped(1, 2))
+    print("ordered, swapped", ordered(swapped(1, 2)))
   </div>
   <div name="sending_starargs">
     """Argument Unpacking
@@ -1337,14 +1332,14 @@
     You can do this with an **unpacking assignment**, like this:
 
       x, y = swapped(3, 6)
-      print ordered(x, y)
+      print(ordered(x, y))
 
     Fortunately, there is another less cumbersome way
     to do it that is more convenient. If you prefix
     the argument with |*|, Python will unpack the
     value into function arguments in one step:
 
-      print ordered(*swapped(3, 6))
+      print(ordered(*swapped(3, 6)))
 
     Exercises
 
@@ -1362,12 +1357,12 @@
 
     # You can always do this via unpacking assignment:
     x, y = swapped("hi", "there")
-    print ordered(x, y)
+    print(ordered(x, y))
 
     # But this is easier.
-    print ordered(*swapped(1, 5))
+    print(ordered(*swapped(1, 5)))
 
-    print swapped(*ordered(4, 2))
+    print(swapped(*ordered(4, 2)))
   </div>
   <div name="receiving_starargs">
     """Argument Packing
@@ -1411,13 +1406,13 @@
     def star_ordered(*args):
       return sorted(args)
 
-    print "ordered:", star_ordered(6, 3)
+    print("ordered:", star_ordered(6, 3))
 
     # You can mix regular and star parameters, if the
     # star ones come last.
     #
     def star_mixed(a, b, *others):
-      print a, b, others
+      print(a, b, others)
 
     # Note how the arguments are printed.
     star_mixed("hi", "there,", "what's", "your", "name?")
@@ -1438,7 +1433,7 @@
     assign them where they are declared, thus:
 
       def myfunc(greeting, name='Compadre'):
-        print greeting, name + '!'
+        print(greeting, name + '!')
 
     In this example, the parameter called |name| has a
     default value that will be used if the caller does
@@ -1464,13 +1459,13 @@
     # If no name is specified when this is called, the
     # default value is used.
     def greet(greeting, name='Partner'):
-      print greeting + ',', name + '!'
+      print(greeting + ',', name + '!')
 
     # Use the default name.
     greet("Howdy")
 
     # Use our supplied name.
-    greet("Hello", "Honey")
+    greet("Hello", "Fellow Human")
 
     # Call using named arguments. Note that, when
     # naming arguments, order is unimportant.
@@ -1478,7 +1473,7 @@
 
     # Let's accept even more arguments.
     def print_many_args(a, b, c, d="D", e="E", f="F"):
-      print a, b, c, d, e, f
+      print(a, b, c, d, e, f)
 
     # Regular call without defaults:
     print_many_args("1", "2", "3", e="new_E")
@@ -1531,8 +1526,8 @@
     """
 
     def takes_two(first, second):
-      print "first:", first
-      print "second:", second
+      print("first:", first)
+      print("second:", second)
 
     # You can unpack a dictionary into named
     # arguments with **:
@@ -1546,8 +1541,8 @@
     # end up in kargs.
     #
     def accepts_keys(prefix, name, suffix='', **kargs):
-      print "The Famous", prefix, name + ',', suffix
-      print "Extra Info:", kargs
+      print("The Famous", prefix, name + ',', suffix)
+      print("Extra Info:", kargs)
 
     accepts_keys("Dr.", "Batman", "PhD.", sidekick="Postdoc Robin")
     accepts_keys(name="Mata Hari", role="Spy", prefix='Ms',
@@ -1556,7 +1551,7 @@
     # You can also accept both types of arguments:
     #
     def accepts_everything(a, b, *args, **kargs):
-      print a, b, args, kargs
+      print(a, b, args, kargs)
 
     accepts_everything(1, 2, 3, 4, 5, x='time', y='money')
   </div>
@@ -1576,7 +1571,7 @@
 
     The |pydoc| utility and |help| function each
     format these docstrings and display them when
-    requested.
+    requested (outside the browser).
 
     At the command line, for example, you can type
 
@@ -1584,22 +1579,13 @@
 
     And get a nice help page made up mostly of module
     docstrings.
-
-    In this interactive tutorial, you can instead call
-    |help()| at the bottom of the code to see
-    something similar in the output window.
-
-    Exercises:
-
-    - Try running |help()|.
-
-    - Try running |help(a_complex_function)|.
     """
 
     __doc__ = """Short description of the module.
 
     A longer description of the module. This docstring can
-    be accessed in the module-global __doc__ variable.
+    be accessed in the module-global __doc__ variable (in full
+    Python environments, not this one).
     """
 
     def a_complex_function(a, b, c):
@@ -1615,84 +1601,16 @@
       Returns:
         Nothing - awesomeness needs no return value.
       """
-      print "Shhh: it's actually not all that complex:"
-      print a, b, c
+      print("Shhh: it's actually not all that complex:")
+      print(a, b, c)
       # No return statement, or an empty return statement,
       # will implicitly return None.
 
-    print "Result of a complex function:"
-    print a_complex_function(True, False, [1,2,3,4])
+    print("Result of a complex function:")
+    print(a_complex_function(True, False, [1,2,3,4]))
 
-    print "The module docstring:"
-    print __doc__
-
-    print "The function docstring:"
-    print a_complex_function.__doc__
-  </div>
-  <div name="doctests">
-    """Docstrings as Tests
-
-    With an understanding of docstrings, we can now
-    take advantage of a very cool facility in Python
-    called **doctests**.
-
-    Unit tests can be a real pain to write, because
-    you have to force yourself to switch gears when in
-    the code-writing zone. Doctests help to make it
-    easier to write simple tests _while you write
-    your documentation_.
-
-    The idea is simply this: you write, inside of the
-    docstring, a short "interpreter session": you
-    write down something that you could type in the
-    interactive interpreter, followed by the results
-    you would see after it executes. You can then
-    easily test whether that actually happens or not.
-
-    Doctests are *usually* run by importing |doctest| and
-    running |doctest.testmod()|. In our web version,
-    however, we just run |_testmod|, a special
-    facility for this environment.
-
-    We'll use doctests for the rest of the tutorials
-    to help with the exercises and to show how things
-    work.
-
-    Exercises
-
-    - Make |less_than_five| pass by making its
-      implementation match its documentation.
-
-    - Make the module doctest fail. You can do
-      anything (like saying that |True| produces
-      |False|).
-    """
-
-    __doc__ = """A testable module.
-
-    What follows is a doctest. We basically mimic the
-    Python interactive interpreter prompts &gt;&gt;&gt; and ..., and
-    show expected output below them.
-
-    &gt;&gt;&gt; less_than_five(3)
-    True
-    """
-
-    def less_than_five(a):
-      """Return True if a &lt; 5.
-
-      &gt;&gt;&gt; less_than_five(10)
-      False
-      &gt;&gt;&gt; less_than_five(5)
-      False
-      &gt;&gt;&gt; less_than_five(2)
-      True
-      """
-      return a &lt;= 5
-
-    # Actually run the doctests:
-    print "Running tests - no news is good news:"
-    _testmod()
+    print("The function docstring:")
+    print(a_complex_function.__doc__)
   </div>
   <div name="exercise_functions1">
     """Exercise: Functions and If (1)
@@ -1702,12 +1620,17 @@
     and **slicing** work.
 
     For this and later exercises, you will fill in the
-    code marked |# TODO:| to make the doctests pass.
+    code marked |# TODO:| to make the tests pass.
     Remember that you can use |[::-1]| to get a
     reversed sequence using a slice.
 
     First try running the code without changes. What
     fails?
+
+    Note: we have included a special |_assert_equal|
+    function for testing. You would normally use the
+    |unittest| or |doctest| module for this, but it
+    is convenient in this tutorial to keep it simple.
 
     Exercises
 
@@ -1723,16 +1646,7 @@
 
     __doc__ = """Functions and branching exercise (1)
 
-    Make these tests pass:
-
-    &gt;&gt;&gt; reverse_a("a silly thing")
-    'gniht yllis a'
-
-    &gt;&gt;&gt; reverse_a("not so silly")
-    'not so silly'
-
-    &gt;&gt;&gt; reverse_a("")
-    ''
+    Make the assertion tests at the bottom of the file pass.
     """
 
     def reverse_a(s):
@@ -1740,8 +1654,10 @@
       # TODO: Fill this in.
 
 
-    if _testmod().failed == 0:
-      print "Success!"
+    print("No news is good news: if nothing prints below, you passed!")
+    _assert_equal("gniht yllis a", reverse_a("a silly thing"))
+    _assert_equal("not so silly", reverse_a("not so silly"))
+    _assert_equal("", reverse_a(""))
   </div>
   <div name="exercise_functions2">
     """Exercise: Functions and If (2)
@@ -1749,36 +1665,29 @@
     For this exercise, you get to write the whole
     function out, including the name and arguments.
     Docstrings are optional, but will produce more
-    bonus points.
+    bonus points, wherever you go to get them.
+    Somewhere other than here.
 
     Exercises
 
-    - Write a function |every_other_arg| that accepts any number of
-      arguments and returns a list containg every
-      other one. Recall that |[::2]| will produce
-      every other element of a sequence, and |*args|
-      will collect all function arguments into a
-      single tuple.
+    - Write a function |every_other_arg| that accepts
+      any number of arguments and returns a list
+      containg every other one. Recall that |[::2]|
+      will produce every other element of a sequence,
+      and |*args| will collect all function arguments
+      into a single tuple.
     """
 
-    __doc__ = """More Practice with Functions and Branching
-
-    &gt;&gt;&gt; every_other_arg(0, 1, 2, 3, 4, 5, 6)
-    (0, 2, 4, 6)
-    &gt;&gt;&gt; every_other_arg()
-    ()
-    &gt;&gt;&gt; every_other_arg("goodnight", 0, "my", 1, "someone")
-    ('goodnight', 'my', 'someone')
+    __doc__ = """More Practice with Functions and Branching.
     """
 
-    # TODO: write the function to pass the tests
-    # above.
+    # TODO: write the every_other_arg function to pass
+    # the tests below.
 
-
-
-
-    if _testmod().failed == 0:
-      print "Success!"
+    _assert_equal((0, 2, 4, 6), every_other_arg(0, 1, 2, 3, 4, 5, 6))
+    _assert_equal((), every_other_arg())
+    _assert_equal(('goodnight', 'my', 'someone'),
+                  every_other_arg('goodnight', 0, 'my', 1, 'someone'))
   </div>
   <div name="exercise_functions3">
     """Exercise: Functions and If (3)
@@ -1807,33 +1716,18 @@
     Exercise
 
     - Write the |kind_of_sorted| function and make the
-      module docstring pass. It accepts one argument:
-      a list, and returns that list with _all
-      but the first two and last two elements sorted_.
-      The first two and last two elements should
-      remain in the same place. Hint: what should
-      happen when the list is small or empty? How
-      small?
+      tests pass. It accepts one argument: a list, and
+      returns that list with _all but the first two
+      and last two elements sorted_. The first two and
+      last two elements should remain in the same
+      place. Hint: what should happen when the list is
+      small or empty? How small?
 
     """
 
     __doc__ = """Kind of Sorted
 
-    &gt;&gt;&gt; kind_of_sorted([8,7,6,5,4,3,2,1,0])
-    [8, 7, 2, 3, 4, 5, 6, 1, 0]
-
-    &gt;&gt;&gt; kind_of_sorted([5, 4, 3, 2, 1])
-    [5, 4, 3, 2, 1]
-
-      Now check this out - creates a list of
-      characters from a string, gets it kind of
-      sorted, and joins the result back into a string:
-
-    &gt;&gt;&gt; ''.join(kind_of_sorted(list("aragonite")))
-    'araginote'
-
-    &gt;&gt;&gt; kind_of_sorted([])
-    []
+    Write the kind_of_sorted function to pass the tests.
     """
 
 
@@ -1842,10 +1736,12 @@
       # TODO: Fill this in.
 
 
-
-
-    if _testmod().failed == 0:
-      print "Success!"
+    _assert_equal([8,7,2,3,4,5,6,1,0],
+                  kind_of_sorted([8,7,6,5,4,3,2,1,0]))
+    _assert_equal([5,4,3,2,1],
+                  kind_of_sorted([5,4,3,2,1]))
+    _assert_equal('araginote',
+                  ''.join(kind_of_sorted(list("aragonite"))))
   </div>
   <div name="main_function">
     """Main Functions
@@ -1882,7 +1778,7 @@
 
     - Print |__name__|.
 
-    - Now |import math| and print |math.__name__|.
+    - Now |import math| and |print(math.__name__)|.
     """
 
     __doc__ = """Main Functions Demo
@@ -1901,7 +1797,7 @@
 
 
     def main():
-      print "Here is where we do the *real* work."
+      print("Here is where we do the *real* work.")
 
 
     if __name__ == '__main__':
@@ -1946,6 +1842,10 @@
     - Uncomment the |print| statements inside of |factorial|
       (above and below |smaller_problem|) to see what
       is happening.
+
+    - Practice saying "recur" instead of "recurse",
+      which is not a word. Now practice feeling good
+      because you are right.
     """
 
     __doc__ = """Introduction to Recursion
@@ -1970,16 +1870,16 @@
     def factorial(n):
       if n &lt;= 1:
         return 1
-      # print "before recursion", n
+      # print("before recursion", n)
       smaller_problem = factorial(n - 1)
-      # print "after recursion", n
+      # print("after recursion", n)
       return n * smaller_problem
 
 
     # This gets big fast
-    print "2! =", factorial(2)
-    print "7! =", factorial(7)
-    print "20! =", factorial(20)
+    print("2! =", factorial(2))
+    print("7! =", factorial(7))
+    print("20! =", factorial(20))
   </div>
   <div name="exercise_recursion1">
     """Exercise: Recursion (1)
@@ -2018,19 +1918,11 @@
       second |TODO|.
     """
 
-    __doc__ = """Sum a List With Recursion
+    __doc__ = """Sum a List With Recursion.
 
-    &gt;&gt;&gt; add_all([])
-    0
-
-    &gt;&gt;&gt; add_all([1])
-    1
-
-    &gt;&gt;&gt; add_all([3, 4])
-    7
-
-    &gt;&gt;&gt; add_all(range(1, 11))
-    55
+    Note that there is a built-in sum function. Feel
+    free to use that to check your work, but implement
+    this using recursion.
     """
 
     def add_all(seq):
@@ -2047,8 +1939,10 @@
       # return seq[-1] + add_all(seq[:-1])
 
 
-    if _testmod().failed == 0:
-      print "Success!"
+    _assert_equal(0, add_all([]))
+    _assert_equal(1, add_all([1]))
+    _assert_equal(7, add_all([3, 4]))
+    _assert_equal(55, add_all(list(range(1, 11))))
   </div>
   <div name="exercise_recursion2">
     """Exercise: Recursion (2)
@@ -2088,16 +1982,7 @@
       smaller slices.
     """
 
-    __doc__ = """Compute the Nth Fibonacci Number.
-
-    &gt;&gt;&gt; fibonacci(0)
-    1
-
-    &gt;&gt;&gt; fibonacci(6)
-    13
-
-    &gt;&gt;&gt; fibonacci(7)
-    21
+    __doc__ = """Compute the Nth Fibonacci Number using recursion.
     """
 
     def fibonacci(n):
@@ -2107,10 +1992,9 @@
       # TODO: Fibonacci sequence
 
 
-
-
-    if _testmod().failed == 0:
-      print "Success!"
+    _assert_equal(1, fibonacci(0))
+    _assert_equal(13, fibonacci(6))
+    _assert_equal(21, fibonacci(7))
   </div>
   <div name="while_loops">
     """"While" Loops
@@ -2156,13 +2040,13 @@
       """Print all elements of seq."""
       i = 0
       while i &lt; len(seq):
-        print "item", i, seq[i]
+        print("item", i, seq[i])
         i = i + 1  # This is also spelled 'i += 1'
 
     def slicing_print_all(seq):
       """Another way of using while - less efficient."""
       while seq:
-        print seq[0]
+        print(seq[0])
         seq = seq[1:]
 
     def add_all(seq):
@@ -2174,14 +2058,14 @@
         i += 1
       return s
 
-    print "Using indices:"
+    print("Using indices:")
     print_all([1, 5, 8, "hello", 9])
 
-    print "Using slices:"
+    print("Using slices:")
     slicing_print_all(range(3))
 
-    print "Summing:"
-    print "sum of all:", add_all(range(1,12))  # Should be 66
+    print("Summing:")
+    print("sum of all:", add_all(range(1,12)))  # Should be 66
   </div>
   <div name="for_loops">
     """"For" Loops
@@ -2217,9 +2101,9 @@
 
     seq = [1, 3, 6, 10]
 
-    print "sequence output"
+    print("sequence output")
     for x in seq:
-      print x
+      print(x)
 
 
     # Here's a way to add up all of the numbers in a
@@ -2227,7 +2111,7 @@
     s = 0
     for x in seq:
       s += x  # Also spelled 's = s + x'
-    print "sum", s
+    print("sum", s)
 
     # Note that you can also do unpacking assignment
     # in the loop itself:
@@ -2235,7 +2119,7 @@
     pairs = [(1, 'a'), (2, 'b'), (3, 'c')]
 
     for x, y in pairs:
-      print "x:", x, "y:", y
+      print("x:", x, "y:", y)
   </div>
   <div name="exercise_forloops1">
     """Exercise: For Loops (1)
@@ -2263,13 +2147,7 @@
       pairs, as described in the TODO. Make the test pass.
     """
 
-    __doc__ = """Enumerator Exercise
-
-    &gt;&gt;&gt; enumerator("stuff")
-    [(0, 's'), (1, 't'), (2, 'u'), (3, 'f'), (4, 'f')]
-    &gt;&gt;&gt; enumerator(['a', 'b', 'c', 'd'])
-    [(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')]
-    """
+    __doc__ = """Enumerator Exercise"""
 
 
     def enumerator(seq):
@@ -2282,13 +2160,14 @@
 
 
     if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
-
+      _assert_equal([(0, 's'), (1, 't'), (2, 'u'), (3, 'f'), (4, 'f')],
+                    enumerator("stuff"))
+      _assert_equal([(0, 'a'), (1, 'b'), (2, 'c'), (3, 'd')],
+                    enumerator(['a', 'b', 'c', 'd']))
       # Note how, when we know we have a list of pairs, we
       # can just unpack them right in the loop statement.
       for i, x in enumerator("a sequence of characters"):
-        print i, x
+        print(i, x)
   </div>
   <div name="exercise_forloops2">
     """Exercise: For Loops (2)
@@ -2328,14 +2207,7 @@
       |for| loops.
     """
 
-    __doc__ = """Loop Exercises
-
-    &gt;&gt;&gt; fib = []
-    &gt;&gt;&gt; for i in range(10):
-    ...   fib.append(fibonacci(i))
-    &gt;&gt;&gt; fib
-    [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
-    """
+    __doc__ = """Loop Exercises"""
 
     def fibonacci(n):
       """Returns nth element of the Fibonacci sequence.
@@ -2352,8 +2224,8 @@
 
 
     if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
+      _assert_equal([1, 1, 2, 3, 5, 8, 13, 21, 34, 55],
+                    [fibonacci(i) for i in range(10)])
   </div>
   <div name="files">
     """Files
@@ -2366,14 +2238,17 @@
     In this environment, you can access a virtual filesystem
     that is part of the in-browser interpreter.
     Let's do something silly: let's get
-    all of the lines of the Python |string| module
-    and print out the ones that contain comments.
+    all of the lines of a fake file (created at the
+    bottom of the code) and print out the ones that
+    contain comments.
 
-    To do this, we'll use the builtin |open| function.
-    It takes a filename as an argument and returns a
-    "file-like" object. In Python-speak, this means it
-    supports some basic things like |read|, |write|
-    (if writeable), and _iteration_.
+    To do this, we would normally use the builtin
+    |open| function. It takes a filename as an
+    argument and returns a "file-like" object. In
+    Python-speak, this means it supports some basic
+    things like |read|, |write| (if writeable), and
+    _iteration_. In this example, we use |StringIO|
+    to create a file-like thing from a string.
 
     Because file objects are **iterable**, they can be
     used as the sequence in a |for| loop. When used
@@ -2392,97 +2267,58 @@
 
     __doc__ = """Files: Opening the Code"""
 
-    f = open('lib/pypyjs/lib_pypy/string.py')
+    # Normally we use the open function to open a file.
+    # In the browser environment, that doesn't work
+    # as well, so we have provided an in-memory file
+    # called "myfile".
+    #
+    # If you were to open it in regular Python, it
+    # might look something like this:
+    # myfile = open('myfile.txt')
 
-    for line in f:
-      if line.lstrip().startswith('#'):  # ignore leading space
-        print line.rstrip()  # strip trailing space, including \n.
+    def main():
+        for line in myfile:
+          if line.lstrip().startswith('#'):  # ignore leading space
+            print(line.rstrip())  # strip trailing space, including \n.
 
-    f.close()
-  </div>
-  <div name="list_dir">
-    """More on Files: Listing Directories
+        myfile.close()
 
-    Before we move on, let's do one more thing with
-    files.
 
-    Here, we will list all files in a directory and
-    stick them into a list before outputting them.
+    # Setup for the above.
+    if __name__ == '__main__':
+        import io
+        myfile = io.StringIO('''This is a file
+    full of lines
+    each containing some text
+    # some start with comment leaders
+    most aren't comments''')
 
-    To do this, we import the |listdir| function from
-    the |os| module. Heed the comment above the
-    import, though - in the name of education we are
-    ignoring best practice.
-
-    Incidentally, the |os| module has a lot of
-    interesting stuff in it. It's worth poking around
-    the documentation when you can.
-
-    Finally, note that we are using the |str.join|
-    method, here, to print out the listing. Here
-    |join| is called on the _delimiter_, and the list
-    of strings is an argument. They are then joined
-    into a single string. Take some time to understand
-    what's happening.
-
-    Exercises
-
-    - Change the loop to only output names that end in
-      |.py| and contain the word 'exercise'. You may
-      find the |and| operator useful for doing this
-      (there is also an |or| operator).
-    """
-
-    __doc__ = """A Note on Imports
-
-    It's usually best to import modules, not import
-    stuff *out* of modules. This makes it easier to
-    tell where things come from after you've been away
-    for a while.
-
-    We'll ignore that just to show how 'from' and 'as'
-    work.
-    """
-
-    from os import listdir
-    from os.path import join as pathjoin
-
-    parent = 'lib/pypyjs/lib_pypy'
-
-    all_files = []
-    for name in listdir(parent):
-      if not name.endswith('.py'):
-        # Remember: 'continue' means 'jump to the top
-        # of the loop again'.
-        continue
-
-      all_files.append(pathjoin(parent, name))
-
-    print '\n'.join(all_files)
+        main()
   </div>
   <div name="with_tracker_intro">
     """"With" Statements, and Our Tracker
 
-    Now that we've fiddled around a bit with files and
-    getting web content, we know that we don't really
-    need to do much more with those: they're just
-    iterables over lines, or (if you call |read|), big
-    long strings. We can work with line iterables or
-    long strings without hitting the file system or
-    even the web, so we'll mostly proceed with smaller
-    in-code data.
+    Now that we've fiddled around a bit with files,
+    we know that we don't really need to do much more
+    with those: they're just iterables over lines, or
+    (if you call |read|), big long strings. We can
+    work with line iterables or long strings without
+    hitting the file system, so we'll continue working
+    with smaller in-code data.
 
     Coming Up
 
     In the upcoming series of exercises and
     instructive slides, we'll build all of the pieces
     of a weight tracker with charts for your ... cat.
-    Or dog. Or whatever politically correct and
-    unembarrassing thing that you aren't allergic to.
+    Or dog. Or some other unembarrassing critter or
+    object that you aren't allergic to.
 
     The idea will be to (eventually) produce a nice
-    chart to demonstrate to kitteh's vet that the diet
-    is going well.
+    chart to demonstrate to your pet's vet that the
+    diet is going well. If your pet is a rock, you
+    might need to take its weight over geologic time
+    scales to see any progress.
 
     One More Concept
 
@@ -2504,7 +2340,7 @@
     The "with" statement sets up a *context*. A
     context is an opportunity to do something with a
     resource, then have it automatically cleaned up
-    when you're done.
+    (or something else) when you're done.
 
     Files are a great and common example of why you
     want one: opening the file provides a context -
@@ -2517,12 +2353,23 @@
     done with them.
     """
 
-    import os.path
+    def main():
+        # With a real file you commonly see
+        # with open(filename) as f:
+        with myfile as f:
+            print(f.read())
 
-    filename = os.path.join("lib", "pypyjs", "lib_pypy", "warnings.py")
 
-    with open(filename) as f:
-      print f.read()
+    # Setup for the above.
+    if __name__ == '__main__':
+        import io
+        myfile = io.StringIO('''This is a file
+    full of lines
+    each containing some text
+    # some start with comment leaders
+    most aren't comments''')
+
+        main()
   </div>
   <div name="raising_exceptions">
     """Raising Exceptions
@@ -2574,23 +2421,13 @@
       2012-11-12 9.4
       2012-11-13 9.1
 
-    Blank lines and comment lines are also allowed. See the tests here.
-
-    &gt;&gt;&gt; parse_measurements(['  2012-10-10 5.4 \\n',
-    ...                     ' # comment!\\n',
-    ...                     '2012-10-11 5.3'])
-    ['2012-10-10', '5.4']
-    ['2012-10-11', '5.3']
-    &gt;&gt;&gt; parse_measurements(['2012-10-10 5.4', '2012-10-09 5.3'])
-    ['2012-10-10', '5.4']
-    Traceback (most recent call last):
-    ...
-    ValueError: Non-increasing dates: 2012-10-10 -&gt; 2012-10-09
+    Blank lines and comment lines are also allowed. See the tests.
     """
 
     def parse_measurements(lines):
       """Parse date-measurement entries from lines. See docs above."""
       last_date = ""  # less than all other strings
+      measurements = []
       for line in lines:
         # TODO:
         # - Strip each line (using line = line.strip())
@@ -2607,12 +2444,17 @@
         # - Don't forget to set last_date down at the
         #   bottom, here! (last_date = date).
 
-        print [date, measurement]
+        measurements.append([date, measurement])
+
+      return measurements
 
 
     if __name__ == '__main__':
-      if _testmod().failed == 0:
-        print "Success!"
+      _assert_equal([['2012-10-10', '5.4'],['2012-10-11', '5.3']],
+                    parse_measurements(['  2012-10-10 5.4 \n',
+                                        ' # comment!\n',
+                                        '2012-10-11 5.3']))
+      _assert_raises(ValueError, parse_measurements, ['2012-10-10 5.4', '2012-10-09 5.3'])
   </div>
   <div name="generators">
     """Generators
@@ -2663,10 +2505,6 @@
 
     This passes right now. Your job is to convert the
     function to a generator and keep it passing.
-
-    &gt;&gt;&gt; list(parsed_measurements(['2012-10-10 5.4',
-    ...                           '2012-10-11 5.3']))
-    [('2012-10-10', '5.4'), ('2012-10-11', '5.3')]
     """
 
 
@@ -2695,8 +2533,9 @@
 
 
     if __name__ == '__main__':
-      if _testmod().failed == 0:
-        print "Success!"
+      _assert_equal([('2012-10-10', '5.4'), ('2012-10-11', '5.3')],
+                    list(parsed_measurements(['2012-10-10 5.4',
+                                              '2012-10-11 5.3'])))
   </div>
   <div name="generators2">
     """Generators, Explained
@@ -2746,15 +2585,15 @@
         yield x
 
 
-    print "Getting a list:", get_a_list()
+    print("Getting a list:", get_a_list())
 
     my_iter = get_an_iterator()
 
-    print "Got ... something:", my_iter
-    print "Getting the next value:", next(my_iter)
-    print "Looping over the rest of it:"
+    print("Got ... something:", my_iter)
+    print("Getting the next value:", next(my_iter))
+    print("Looping over the rest of it:")
     for x in my_iter:
-      print x
+      print(x)
   </div>
   <div name="generators3">
     """Generators for Refactoring
@@ -2799,13 +2638,6 @@
     Changes: we now clean out comments and blank lines
     in a different function, and the error message for
     bad dates has the line number in it.
-
-    &gt;&gt;&gt; list(parsed_measurements(['2012-10-10 5.4', '2012-10-11 5.3']))
-    [('2012-10-10', '5.4'), ('2012-10-11', '5.3')]
-    &gt;&gt;&gt; list(parsed_measurements(['2012-10-10 5.4', '2012-10-09 5.3']))
-    Traceback (most recent call last):
-    ...
-    ValueError: Non-increasing (2): 2012-10-10 -&gt; 2012-10-09
     """
 
     def clean_lines(lines):
@@ -2833,8 +2665,11 @@
 
 
     if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
+      _assert_equal([('2012-10-10', '5.4'), ('2012-10-11', '5.3')],
+                    list(parsed_measurements(['2012-10-10 5.4',
+                                              '2012-10-11 5.3'])))
+      _assert_raises(ValueError, lambda x: list(parsed_measurements(x)),
+                     ['2012-10-10 5.4', '2012-10-09 5.3'])
   </div>
   <div name="type_conversion">
     """Real Dates, and Strings to Numbers
@@ -2877,20 +2712,7 @@
       help for |datetime.datetime|.
     """
 
-    __doc__ = """Convert lines 'date measurement' into pairs.
-
-    &gt;&gt;&gt; lines = ['2012-10-10 5.3', '2012-10-11 5.4']
-
-    &gt;&gt;&gt; for d, w in parsed_measurements(lines):
-    ...   print type(d), d, type(w), w
-    &lt;class 'datetime.datetime'&gt; 2012-10-10 00:00:00 &lt;type 'float'&gt; 5.3
-    &lt;class 'datetime.datetime'&gt; 2012-10-11 00:00:00 &lt;type 'float'&gt; 5.4
-
-    &gt;&gt;&gt; for d, w in parsed_measurements(lines):
-    ...   print d.strftime("%d/%m/%Y"), w
-    10/10/2012 5.3
-    11/10/2012 5.4
-    """
+    __doc__ = """Convert lines 'date measurement' into pairs."""
 
     # Not a module, but seriously? Who wants to type
     # "datetime.datetime.stuff" all the time?
@@ -2925,8 +2747,10 @@
 
 
     if __name__ == "__main__":
-      if _testmod().failed == 0:
-        print "Success!"
+      lines = ['2012-10-10 5.3', '2012-10-11 5.4']
+      _assert_equal(['10/10/2012 5.3', '11/10/2012 5.4'],
+                    ['{} {}'.format(d.strftime('%d/%m/%Y'), w)
+                     for d, w in parsed_measurements(lines)])
   </div>
   <div name="iterables">
     """Iterables and Iterators
@@ -2972,18 +2796,18 @@
     # This is a string, and is therefore iterable
     #
     letters = string.ascii_lowercase
-    print letters
+    print(letters)
 
     # So, we can get an iterator from it.
     #
     letter_iter = iter(letters)
-    print letter_iter
+    print(letter_iter)
 
     # And we can call next on it to get a value and advance
     # it.
     #
-    print next(letter_iter)
-    print next(letter_iter)
+    print(next(letter_iter))
+    print(next(letter_iter))
 
     # Iterators are iterables that return themselves when
     # asked for an iterator, so they can also be used in
@@ -2991,20 +2815,20 @@
     # is already partially consumed.
     #
     for letter in letter_iter:
-      print letter,
+      print(letter)
     print
 
     # Let's advance to the end.
     #
     item_iter = iter((1,2))
-    print next(item_iter)
-    print next(item_iter)
+    print(next(item_iter))
+    print(next(item_iter))
 
     # StopIteration exception!
     # "For" loops know how to handle this and exit cleanly
     # when they see StopIteration.
     #
-    print next(item_iter)
+    print(next(item_iter))
   </div>
   <div name="exceptions">
     """Exceptions
@@ -3044,7 +2868,7 @@
       of terminating immediately.
     """
     for x in "A pony, for me?":
-      print x,
+      print(x)
     print
 
     # Equivalent to the above is this "while" loop.
@@ -3052,7 +2876,7 @@
     range_iter = iter("No pony for you today.")
     while True:
       try:
-        print next(range_iter),
+        print(next(range_iter))
       except StopIteration as e:
         break  # end the loop early and cleanly
     print
@@ -3066,11 +2890,11 @@
         # This is not in a "try" block - so it causes
         # the function to terminate immediately.
         raise ValueError("You have a debt of {n} ponies.".format(n=number))
-      print "You have {n} ponies".format(n=number)
+      print("You have {n} ponies".format(n=number))
 
     def call_ponies(number):
       print_ponies(number)
-      print "No pony errors!"
+      print("No pony errors!")
 
     call_ponies(10)
     call_ponies(-2)
@@ -3118,10 +2942,6 @@
     just the value itself. After that, each smoothed
     value is calculated to be 10% of the distance to
     the new value.
-
-    &gt;&gt;&gt; values = [8.2, 8.1, 8.0, 7.8, 7.9, 8.0, 7.5]
-    &gt;&gt;&gt; ["{0:.2f}".format(x) for x in exponentially_smoothed(values)]
-    ['8.20', '8.19', '8.17', '8.13', '8.11', '8.10', '8.04']
     """
 
     def exponentially_smoothed(numbers):
@@ -3136,8 +2956,9 @@
 
 
     if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
+      values = [8.2, 8.1, 8.0, 7.8, 7.9, 8.0, 7.5]
+      _assert_equal(['8.20', '8.19', '8.17', '8.13', '8.11', '8.10', '8.04'],
+                    ["{0:.2f}".format(x) for x in exponentially_smoothed(values)])
   </div>
   <div name="function_objects">
     """Function Objects
@@ -3188,7 +3009,7 @@
       # The inner function has access to the "stuff"
       # variable passed into the outer function.
       def stuff_printer():
-        print stuff
+        print(stuff)
 
       # Functions are just objects. If we don't call it,
       # it's just another thing to pass around.
@@ -3208,130 +3029,12 @@
 
     # Now we have a list of functions, all of which will
     # output something different.
-    print printers
+    print(printers)
 
     # Let's call them all and see if they remember the
     # state of the world when they were created.
     for p in printers:
       p()
-  </div>
-  <div name="mutable_closures">
-    """Mutable Closure Variables
-
-    This is fairly advanced, and might take a little
-    bit of head scratching to understand. Take your
-    time, it's worth it. If you can understand what
-    this code is doing, then you definitely understand
-    scoping in Python.
-
-    Let's use our new smoothing generator to change
-    all of our |(date, measurement)| pairs into
-    |(date, measurement, smoothed)| triples.
-
-    Again, we will use a generator. Yes, they are that
-    useful. You will therefore see them everywhere you
-    look, including where there are no generators.
-    They are like Python's hammer - now go find a
-    nail.
-
-    A quick note: the test for monotonicity
-    (increasing dates) has been folded into the
-    clean_lines function. Take a look if you're
-    interested: this works because dates of the form
-    yyyy-mm-dd sort properly as strings.
-
-    Exercises
-
-    - Implement the smoothed_data function (see
-      |TODO|) to accept an iterable over (date,
-      measurement) pairs, and produce a (date,
-      measurement, smoothed) triple for each one.
-
-    Note: this is not simple, because the smoothing
-    generator only expects an iterable over raw data.
-    We could just change parsed_measurements to emit
-    triples, but this will provide good closure
-    practice.
-
-    Hint: What happens to the old date and measurement
-    values at each iteration through the loop? Can you
-    use them outside?
-    """
-
-    __doc__ = """Augmenting data smoother.
-
-    Here's the test to make pass:
-    &gt;&gt;&gt; lines = '''
-    ... 2012-01-01 7.6
-    ... 2012-01-02 7.7
-    ... 2012-01-03 7.5
-    ... 2012-01-04 7.3
-    ... 2012-01-05 7.4
-    ... '''.split('\\n')
-    &gt;&gt;&gt; for triple in smoothed_data(parsed_measurements(lines)):
-    ...   print [str(x) for x in triple]
-    ['2012-01-01 00:00:00', '7.6', '7.6']
-    ['2012-01-02 00:00:00', '7.7', '7.61']
-    ['2012-01-03 00:00:00', '7.5', '7.599']
-    ['2012-01-04 00:00:00', '7.3', '7.5691']
-    ['2012-01-05 00:00:00', '7.4', '7.55219']
-    """
-
-    import datetime
-
-    def smoothed_data(pairs):
-      """Accepts pairs of values and produces an iterator over triples."""
-      last_values = [None, None]
-
-      def saved_values_iter():
-        for d, w in pairs:
-          last_values[:] = [d, w]  # Save current data in outer scope before yield.
-          yield w
-
-      for smoothed in exponentially_smoothed(saved_values_iter()):
-        # TODO:
-        # Replace the yield below with a proper
-        # implementation. The goal is to yield date,
-        # measurement, and smoothed all at the same time.
-        # But as we consume the exponentially_smoothed
-        # iterator, it also consumes the
-        # saved_values_iterator, so we have to get
-        # date and measurement from somewhere else...
-        yield None, None, None
-
-
-    def exponentially_smoothed(numbers):
-      it = iter(numbers)
-      smoothed = next(it)
-      yield smoothed
-      for n in it:
-        smoothed += 0.1 * (n - smoothed)
-        yield smoothed
-
-
-    def parsed_measurements(lines):
-      for line in clean_lines(lines):
-        d, w = line.split()
-        yield datetime.datetime.strptime(d, '%Y-%m-%d'), float(w)
-
-
-    def clean_lines(lines):
-      last_date = ""
-      for i, line in enumerate(lines):
-        line = line.strip()
-        if not line or line.startswith('#'):
-          continue
-        date = line.split()[0]
-        if date &lt;= last_date:
-          raise ValueError(
-            "Non-incrementing (%d):\n\t%s\n\t%s" % (i, last_line, line))
-        last_date = date
-        yield line
-
-
-    if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
   </div>
   <div name="comprehensions">
     """Comprehensions
@@ -3382,131 +3085,21 @@
          ('g','h','i'),
          ('m','n','o')]
 
-    print "first two"
-    print list(get2(a, 0, 1))
-    print "first and last"
-    print list(get2(a, 0, 2))
+    print("first two")
+    print(list(get2(a, 0, 1)))
+    print("first and last")
+    print(list(get2(a, 0, 2)))
 
     # List comprehension
-    print "first two - comprehension"
-    print [(x, y) for x, y, z in a]
-    print "first and last - filtered"
-    print [(x, z) for x, y, z in a if x &lt; 'j']
+    print("first two - comprehension")
+    print([(x, y) for x, y, z in a])
+    print("first and last - filtered")
+    print([(x, z) for x, y, z in a if x &lt; 'j'])
 
     # Generator comprehension
-    print "raw generator", ((x, y) for x, y, _ in a)
+    print("raw generator", ((x, y) for x, y, _ in a))
     # Look, Ma! No (additional) parentheses!
-    print sorted((x, y) for x, y, _ in a)
-  </div>
-  <div name="tracker_chart">
-    """Make Chart Data
-
-    Let's do something fun, now. We'll use the (now
-    deprecated, of course) Google Image Charts
-    to generate a graph from our smoothed data.
-
-    http://developers.google.com/chart/image/docs/data_formats
-
-    To do this, we'll have our Python code produce a
-    URL of a chart image.
-
-    Note that the code is shorter because date strings are
-    actually fine for our needs, the smoothing
-    implementation is folded into the parser, and some
-    well-placed comprehensions replace a few lines of
-    logic. It's a good idea to take some time to
-    understand the changes, particularly since some of
-    them are _bad exmaples_, in that they make clear
-    code much less clear by trying to do too much on
-    one line.
-
-    You are already equipped to understand all of it,
-    but may need a moment to noodle it all precisely
-    because these are examples of not-so-readable
-    Python. Remember when you code, you are writing
-    for a human audience as well as a computer.
-
-    To generate a chart URL, we need to provide values
-    in a comma-separated list with some additional
-    parameters. The basic parameters are provided
-    in the main() function, as are the basic data
-    lines.
-
-    Exercises
-
-    - Fill in the part marked TODO, then paste the URL
-      into your browser.
-    """
-
-    __doc__ = """Pass these tests:
-
-    &gt;&gt;&gt; data = '''
-    ... 2012-01-01 8.5
-    ... 2012-01-02 8.4
-    ... 2012-01-03 8.1
-    ... 2012-01-04 8.3
-    ... 2012-01-05 8.0
-    ... 2012-01-06 7.9
-    ... '''.split('\\n')
-    &gt;&gt;&gt; make_chart_url_data(parsed_measurements(data))
-    '8.50,8.40,8.10,8.30,8.00,7.90|8.50,8.49,8.45,8.44,8.39,8.34'
-    """
-
-    def make_chart_url_data(data):
-      """Create chart URL data from (date, measurement, smoothed) triples."""
-      # TODO:
-      # Data format is n,n,n,n,n|n,n,n,n,n,n
-      # Where | separates different plots, and 'n' is a
-      # value within a plot.
-      #
-      # return two plot sequences, one for
-      # measurements and the other for smoothed measurements.
-      # Note that this will require storage of some kind.
-      # You can either store the data as a list and iterate
-      # over it twice, or you can incrementally create two
-      # lists while iterating over it once.
-      #
-      # Note that you can assign some of the pieces of each
-      # item to _ to show you are ignoring them.
-      #
-      # Make use of str.join (where the string is the
-      # separator), e.g.,
-      # ','.join("{0:.2f}.format(x) for x in some_sequence)
-      # This joins the sequence in the argument with the
-      # string on which join is called.
-
-
-    def parsed_measurements(lines):
-      splits = ((d, float(w)) for d, w in (x.split() for x in clean_lines(lines)))
-      d, w = next(splits)
-      smoothed = w
-      yield d, w, smoothed
-      for d, w in splits:
-        smoothed += 0.1 * (w - smoothed)
-        yield d, w, smoothed
-
-
-    def clean_lines(lines):
-      lines = (y for y in (x.strip() for x in lines) if y and y[0] != '#')
-      last_line = ""
-      for i, line in enumerate(lines):
-        if line &lt;= last_line:
-          raise ValueError(
-            "Non-incrementing (%d):\n\t%s\n\t%s" % (i+1, last_line, line))
-        last_line = line
-        yield line
-
-
-    if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
-      print ("http://chart.googleapis.com/chart?chs=320x200&amp;cht=lc&amp;chds=a&amp;chd=t:" +
-             make_chart_url_data(parsed_measurements(["2012-01-01 8.5",
-                                                      "2012-01-02 8.1",
-                                                      "2012-01-03 7.5",
-                                                      "2012-01-04 8.0",
-                                                      "2012-01-05 7.6",
-                                                      "2012-01-06 7.7"])))
+    print(sorted((x, y) for x, y, _ in a))
   </div>
   <div name="regular_expressions">
     """Regular Expressions
@@ -3550,7 +3143,7 @@
     # evaluates to False in boolean contexts, you can do
     # things like this:
     if re.search(r"(?i)kittens", "Kittens on YouTube."):
-      print "Kittens found!"
+      print("Kittens found!")
 
     # Match objects also contain information about the
     # search, like which groups matched where, etc.
@@ -3559,130 +3152,21 @@
     # information.
     expr = re.compile(r"^kittens (.*)$", re.IGNORECASE)
     match = expr.search("Kittens on YouTube.")
-    print match.groups()
+    print(match.groups())
 
     # Note that we preface all pattern strings with the
     # letter 'r' because raw strings are best for regular
     # expression patterns, because they tend to be
     # backslash-heavy.
-    print re.sub(r"(?i)(\s|.t)", "", "Kittens on YouTube")
+    print(re.sub(r"(?i)(\s|.t)", "", "Kittens on YouTube"))
 
     # With date strings:
     m = re.search(r"^(\d{4})-(\d{2})-(\d{2})$", "2012-10-31")
-    print m.groups()
+    print(m.groups())
 
     # Just the year (groups are 1-based when accessed this
     # way):
-    print m.group(1)
-  </div>
-  <div name="tracker_chart_labels">
-    """Chart Date Labels
-
-    There are no labels on our chart, just lines.
-    Let's add some labels. This will give us a chance
-    to use regular expressions a bit to parse our date
-    strings.
-
-    We'll just omit the year and month, placing only the
-    day on the chart. We will also send a parameter asking
-    the chart service to supply its own y-axis labels.
-
-    A regular expression that you might try is
-    '^\d+-\d+-', which matches the first two date
-    components in a string. If you |sub| that with the
-    empty string, you'll be left with just the last
-    part: the day.
-
-    The above expression works because |'\d'| matches
-    any digit, |'+'| means "one or more of the
-    preceding", and |'^'| matches the beginning of the
-    string. The |'-'| just matches itself.
-
-    See http://docs.python.org/2/library/re.html for more details.
-
-    Exercises
-
-    - Fill in the bit marked |TODO|: get the day out
-      of the each date string with a regular
-      expression, then join all of the days together
-      as specified, with the ||| character. Don't
-      forget the URL parameters! The test will pass
-      when you have it all right. Try running it first
-      to get an idea of what's expected.
-    """
-
-    __doc__ = """Make this test pass:
-
-    &gt;&gt;&gt; data = '''
-    ... 2012-01-01 8.5
-    ... 2012-01-02 8.4
-    ... 2012-01-03 8.1
-    ... 2012-01-04 8.3
-    ... 2012-01-05 8.0
-    ... 2012-01-06 7.9
-    ... '''.split('\\n')
-    &gt;&gt;&gt; print '\\n'.join(make_chart_url_data(parsed_measurements(data)))
-    chd=t:8.50,8.40,8.10,8.30,8.00,7.90|8.50,8.49,8.45,8.44,8.39,8.34
-    chxt=x,y&amp;chxl=0:|01|02|03|04|05|06|
-    """
-
-    import re
-
-    def make_chart_url_data(data):
-      """Create chart URL data from (date, measurements, smoothed) triples.
-
-      Returns:
-        (data_string, label_string)
-      """
-      data = list(data)
-      datastr = 'chd=t:' + (','.join('%.2f' % x for _, x, _ in data) +
-                            '|' +
-                            ','.join('%.2f' % x for _, _, x in data))
-
-      # TODO: Let's generate some labels!
-      #
-      # The label format is
-      # "chxt=x&amp;chxl=0:|label|label|...|" Assign the
-      # appropriate string to the "labelstr" variable.
-      # Use a regular expression to "sub" the year and
-      # month away, generating a string with only the
-      # day. If you do that inside of a comprehension
-      # of some kind, you can then use join to get the
-      # | delimiters in there.
-      labelstr = ''
-
-      return datastr, labelstr
-
-    def parsed_measurements(lines):
-      splits = ((d, float(w)) for d, w in (x.split() for x in clean_lines(lines)))
-      d, w = next(splits)
-      smoothed = w
-      yield d, w, smoothed
-      for d, w in splits:
-        smoothed += 0.1 * (w - smoothed)
-        yield d, w, smoothed
-
-    def clean_lines(lines):
-      lines = (y for y in (x.strip() for x in lines) if y and y[0] != '#')
-      last_line = ""
-      for i, line in enumerate(lines):
-        if line &lt;= last_line:
-          raise ValueError(
-            "Non-incrementing (%d):\n\t%s\n\t%s" % (i+1, last_line, line))
-        last_line = line
-        yield line
-
-
-    if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
-      print ("http://chart.googleapis.com/chart?chs=320x200&amp;cht=lc&amp;chds=a&amp;" +
-             "&amp;".join(make_chart_url_data(parsed_measurements(["2012-01-01 8.5",
-                                                               "2012-01-02 8.1",
-                                                               "2012-01-03 7.5",
-                                                               "2012-01-04 8.0",
-                                                               "2012-01-05 7.6",
-                                                               "2012-01-06 7.7"]))))
+    print(m.group(1))
   </div>
   <div name="tracker_histogram">
     """Histograms and Dictionaries
@@ -3729,13 +3213,6 @@
     differences to at most 2 decimal places. Use the
     absolute value of the difference between adjacent
     values.
-
-    &gt;&gt;&gt; h = histogram([8.0, 8.2, 7.8, 7.9, 8.0, 7.7, 7.9, 7.6])
-    &gt;&gt;&gt; print "\\n".join("%r: %r" % (k, v) for k, v in sorted(h.iteritems()))
-    '0.10': 2
-    '0.20': 2
-    '0.30': 2
-    '0.40': 1
     """
 
     def histogram(data):
@@ -3748,8 +3225,8 @@
 
 
     if __name__ == '__main__':
-      if not _testmod().failed:
-        print "Success!"
+      _assert_equal({'0.10': 2, '0.20': 2, '0.30': 2, '0.40': 1},
+                    histogram([8.0, 8.2, 7.8, 7.9, 8.0, 7.7, 7.9, 7.6]))
   </div>
   <div name="tracker_sorting">
     """Sorting, Keys, and Lambda
@@ -3799,86 +3276,18 @@
 
 
     hist = histogram([10, 10.2, 10.4, 10.2, 10.1, 10.0, 9.5, 9.8, 8.7])
-    print "Raw:"
-    print hist
+    print("Raw:")
+    print(hist)
 
     # Now try sorting it.
-    print "Sorted:"
+    print("Sorted:")
     for k, v in sorted(hist.items()):
-      print "%s: %d" % (k, v)
+      print("%s: %d" % (k, v))
 
     # Now try sorting it with a weird key (string reversal):
-    print "Weirdly sorted:"
+    print("Weirdly sorted:")
     for k, v in sorted(hist.items(), key=lambda x: x[0][::-1]):
-      print "%s: %d" % (k, v)
-  </div>
-  <div name="argv_flags">
-    """Command-line arguments and flags.
-
-    This particular part might require you to use the
-    command line to really try it out, but we'll fake
-    it a bit for you to give you an idea of what's
-    what.
-
-    When invoking your programs from the command line,
-    you can accept arguments and do things with them.
-    For example, you might want your tracker to accept
-    different filenames to generate chart data for
-    different cats.
-
-    To do this, you access |sys.argv|. For optional
-    parameters, you can (and should) also use the
-    |argparse| module as shown. It's fairly
-    straightforward to set up, and then you can just
-    access things by name. Documentation can be found
-    here:
-
-    http://docs.python.org/2/library/argparse.html#module-argparse
-
-    Tracker Concluded
-
-    Now you can really go write that tracker program,
-    and we'll put this particular project concept
-    behind us in favor of moving on to more advanced
-    things. But, you have definitely learned enough
-    already to write useful software with the
-    language. It might be a good idea to pause, look
-    over the slides to this point one more time, and
-    try writing some small programs. Or, you could
-    just plunge ahead. There's a lot more fun to be had.
-    """
-
-    import argparse
-
-    PRETEND_COMMANDLINE = './tracker.py input.txt --dryrun -o output.url'
-
-    def main():
-      # Describe what arguments we understand.
-      parser = argparse.ArgumentParser(description="Track Kitty's Progress")
-      parser.add_argument('input_file', type=str,
-                          help=("Input file name; space-separated "
-                                "date, measurement values"))
-      parser.add_argument('-o', '--output', type=str,
-                          help="Output file name")
-      parser.add_argument('-n', '--dryrun', action="store_true")
-      # We can also pass in a list directly, but
-      # called without arguments it imports sys and
-      # uses sys.argv.
-      args = parser.parse_args()
-
-      print args
-      print args.output
-      print args.input_file
-      print args.dryrun
-
-
-    # Pay no attention to the man behind the curtain.
-    if __name__ == '__main__':
-      # Set up a fake set of arguments, pretending
-      # that we were invoked like this:
-      import sys
-      sys.argv = PRETEND_COMMANDLINE.split()  # Way simplistic, not fully general.
-      main()
+      print("%s: %d" % (k, v))
   </div>
   <div name="classes_intro">
     """Classes are Types
@@ -3912,8 +3321,8 @@
     """
 
     # What is this type of thing anyway?
-    print "What's a ValueError class?"
-    print " ", repr(ValueError)
+    print("What's a ValueError class?")
+    print(" ", repr(ValueError))
 
     # Make a new instance of ValueError by calling it.
     ex = ValueError("My super informative error message")
@@ -3921,24 +3330,24 @@
     # What is this?
     # Note how "repr" in this case shows you how to
     # make one, which can be really useful.
-    print "What's a ValueError instance?"
-    print " ", repr(ex)
+    print("What's a ValueError instance?")
+    print(" ", repr(ex))
 
-    print "What (non-special) stuff is inside of it?"
-    print "  " + "\n  ".join(x for x in dir(ex) if x[:2] != '__')
+    print("What (non-special) stuff is inside of it?")
+    print("  " + "\n  ".join(x for x in dir(ex) if x[:2] != '__'))
 
     # Now, there are various ways of getting at the
     # message:
-    print "args:   \t", ex.args
-    print "message:\t", ex.message
-    print "str:    \t", str(ex)
+    print("args:   \t", ex.args)
+    print("with_tb:\t", ex.with_traceback)
+    print("str:    \t", str(ex))
 
     # But "str" just calls the __str__ method:
-    print "__str__:\t", ex.__str__()
+    print("__str__:\t", ex.__str__())
 
     # And since it has a __str__ method, print can use
     # it directly:
-    print "Bare:   \t", ex
+    print("Bare:   \t", ex)
 
   </div>
   <div name="class_keyword">
@@ -3953,11 +3362,10 @@
     use a |class| declaration as shown in the sample
     code. The declaration includes the name of your
     class, and a list of other classes that you
-    **inherit** from. In Python 2, this is often just
-    |object| (in Python 3 you can omit it to inherit
-    from |object| by default):
+    **inherit** from. If omitted, it assumes you are
+    inheriting from |object|.
 
-      class MyClassName(object):
+      class MyClassName:
 
     The body of the class, like in other Python
     scopes, is indented below the declaration. Take a
@@ -3981,7 +3389,7 @@
     if you can tell how it works.
     """
 
-    class Shoe(object):
+    class Shoe:
       """Class docstring - tell what this *is*."""
 
       def __init__(self, color, lace_holes, us_size, weight_oz):
@@ -4011,8 +3419,8 @@
     # "Shoe" is a class. Let's create a specific
     # instance of it and do stuff with it:
     new_shoe = Shoe("red", 10, "8.5 children's", 6)
-    print repr(new_shoe)
-    print new_shoe
+    print(repr(new_shoe))
+    print(new_shoe)
   </div>
   <div name="classes_special">
     """More on Special Methods
@@ -4052,7 +3460,7 @@
       return an iterator.
     """
 
-    class Shoe(object):
+    class Shoe:
       """Class docstring - tell what this *is*."""
 
       def __init__(self, color, lace_holes, us_size, weight_oz):
@@ -4073,8 +3481,8 @@
     # "Shoe" is a class. Let's create a specific
     # instance of it and do stuff with it:
     new_shoe = Shoe("red", 10, "8.5 children's", 6)
-    print repr(new_shoe)
-    print new_shoe
+    print(repr(new_shoe))
+    print(new_shoe)
   </div>
   <div name="classes_self">
     """More on Self
@@ -4112,7 +3520,7 @@
     you call it on a **class**, it is not.
     """
 
-    class Shoe(object):
+    class Shoe:
       """Class docstring - tell what this *is*."""
 
       def __init__(self, color, lace_holes, us_size, weight_oz):
@@ -4130,10 +3538,10 @@
         self.color = new_color
 
     s = Shoe('blue', 4, '6w', 12)
-    print s
+    print(s)
 
     s.change_color('red')
-    print s
+    print(s)
   </div>
   <div name="classes_dict">
     """Namespace Dictionaries
@@ -4156,7 +3564,7 @@
     see what happens when you run it.
 
     Something strange has happened here, though. We
-    can print |instance.SomeVariable|, so we might
+    can |print(instance.SomeVariable)|, so we might
     expect it to be in the instance dictionary, but it
     seems to be missing.
 
@@ -4188,22 +3596,22 @@
 
     # Note that instances can access class variables
     # directly, even if they aren't set in __init__.
-    print instance.arg
-    print instance.SomeVariable
+    print(instance.arg)
+    print(instance.SomeVariable)
 
     # Let's take a look inside of these, now:
 
-    print "INSTANCE:------------------------------"
-    print "\t\n".join("{0}: {1!r}".format(k, v)
-                    for k, v in instance.__dict__.iteritems())
+    print("INSTANCE:------------------------------")
+    print("\t\n".join("{0}: {1!r}".format(k, v)
+                      for k, v in instance.__dict__.items()))
 
-    print "CLASS:---------------------------------"
-    print "\t\n".join("{0}: {1!r}".format(k, v)
-                    for k, v in MyTestClass.__dict__.iteritems())
+    print("CLASS:---------------------------------")
+    print("\t\n".join("{0}: {1!r}".format(k, v)
+                      for k, v in MyTestClass.__dict__.items()))
 
-    print "MODULE:--------------------------------"
-    print "\t\n".join("{0}: {1!r}".format(k, v)
-                    for k, v in string.__dict__.iteritems())
+    print("MODULE:--------------------------------")
+    print("\t\n".join("{0}: {1!r}".format(k, v)
+                      for k, v in string.__dict__.items()))
 
   </div>
   <div name="what_next">
@@ -4270,8 +3678,8 @@
         .87   ...   26.
       """)
 
-      print "Solution:"
-      print board.search().pretty_str()
+      print("Solution:")
+      print(board.search().pretty_str())
 
 
     class SudokuBoard(object):
@@ -4286,10 +3694,10 @@
         """
         self.square_size = 3  # large squares on a side
         self.size = self.square_size**2  # squares on a side
-        numbers = self.numbers = tuple(xrange(1, self.size + 1))
+        numbers = self.numbers = tuple(range(1, self.size + 1))
         rows = self.rows = range(self.size)
         cols = self.cols = range(self.size)
-        self.values = dict(((r,c), numbers) for r in rows for c in cols)
+        self.values = {(r,c): numbers for r in rows for c in cols}
         self.number_strings = '.' + ''.join(str(x) for x in self.numbers)
 
       @staticmethod

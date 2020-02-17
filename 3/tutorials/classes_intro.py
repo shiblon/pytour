@@ -31,8 +31,8 @@ instance.
 """
 
 # What is this type of thing anyway?
-print "What's a ValueError class?"
-print " ", repr(ValueError)
+print("What's a ValueError class?")
+print(" ", repr(ValueError))
 
 # Make a new instance of ValueError by calling it.
 ex = ValueError("My super informative error message")
@@ -40,22 +40,22 @@ ex = ValueError("My super informative error message")
 # What is this?
 # Note how "repr" in this case shows you how to
 # make one, which can be really useful.
-print "What's a ValueError instance?"
-print " ", repr(ex)
+print("What's a ValueError instance?")
+print(" ", repr(ex))
 
-print "What (non-special) stuff is inside of it?"
-print "  " + "\n  ".join(x for x in dir(ex) if x[:2] != '__')
+print("What (non-special) stuff is inside of it?")
+print("  " + "\n  ".join(x for x in dir(ex) if x[:2] != '__'))
 
 # Now, there are various ways of getting at the
 # message:
-print "args:   \t", ex.args
-print "message:\t", ex.message
-print "str:    \t", str(ex)
+print("args:   \t", ex.args)
+print("with_tb:\t", ex.with_traceback)
+print("str:    \t", str(ex))
 
 # But "str" just calls the __str__ method:
-print "__str__:\t", ex.__str__()
+print("__str__:\t", ex.__str__())
 
 # And since it has a __str__ method, print can use
 # it directly:
-print "Bare:   \t", ex
+print("Bare:   \t", ex)
 

@@ -41,7 +41,7 @@ import re
 # evaluates to False in boolean contexts, you can do
 # things like this:
 if re.search(r"(?i)kittens", "Kittens on YouTube."):
-  print "Kittens found!"
+  print("Kittens found!")
 
 # Match objects also contain information about the
 # search, like which groups matched where, etc.
@@ -50,18 +50,18 @@ if re.search(r"(?i)kittens", "Kittens on YouTube."):
 # information.
 expr = re.compile(r"^kittens (.*)$", re.IGNORECASE)
 match = expr.search("Kittens on YouTube.")
-print match.groups()
+print(match.groups())
 
 # Note that we preface all pattern strings with the
 # letter 'r' because raw strings are best for regular
 # expression patterns, because they tend to be
 # backslash-heavy.
-print re.sub(r"(?i)(\s|.t)", "", "Kittens on YouTube")
+print(re.sub(r"(?i)(\s|.t)", "", "Kittens on YouTube"))
 
 # With date strings:
 m = re.search(r"^(\d{4})-(\d{2})-(\d{2})$", "2012-10-31")
-print m.groups()
+print(m.groups())
 
 # Just the year (groups are 1-based when accessed this
 # way):
-print m.group(1)
+print(m.group(1))

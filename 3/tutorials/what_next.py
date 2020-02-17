@@ -63,8 +63,8 @@ def main():
     .87   ...   26.
   """)
 
-  print "Solution:"
-  print board.search().pretty_str()
+  print("Solution:")
+  print(board.search().pretty_str())
 
 
 class SudokuBoard(object):
@@ -79,10 +79,10 @@ class SudokuBoard(object):
     """
     self.square_size = 3  # large squares on a side
     self.size = self.square_size**2  # squares on a side
-    numbers = self.numbers = tuple(xrange(1, self.size + 1))
+    numbers = self.numbers = tuple(range(1, self.size + 1))
     rows = self.rows = range(self.size)
     cols = self.cols = range(self.size)
-    self.values = dict(((r,c), numbers) for r in rows for c in cols)
+    self.values = {(r,c): numbers for r in rows for c in cols}
     self.number_strings = '.' + ''.join(str(x) for x in self.numbers)
 
   @staticmethod
@@ -440,4 +440,3 @@ class SudokuBoard(object):
 
 if __name__ == "__main__":
   main()
-  #_testmod()

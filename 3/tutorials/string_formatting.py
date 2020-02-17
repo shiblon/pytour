@@ -47,28 +47,25 @@ import math
 
 # If you only have one format specifier, and the right
 # side is also a string, you can omit the tuple syntax.
-print "Hi there, %s!" % "you"
+print("Hi there, %s!" % "you")
 
 # Integers get to use %d (for "decimal" - %x would be
 # "hex").
-print "Base 10: %d, Base 16: %x, Base 16: %X" % (30, 30, 30)
+print("Base 10: %d, Base 16: %x, Base 16: %X" % (30, 30, 30))
 
 # Floating point is %f or %g, and I can never remember
 # which one I want, so I go with %f most of the time
 # unless it frustrates me enough to dig through the
 # docs.
-print "A floating point number: %f" % (math.pi)
+print("A floating point number: %f" % (math.pi))
 
 # You can also specify width and such with numeric
 # types.
-print "A width-constrained number: %.2f" % (math.pi)
+print("A width-constrained number: %.2f" % (math.pi))
 
 # And, you can get the repr of anything by using %r.
-print "The repr of a few things: %r %r %r %r" % ('hi', 26j, 17.4, len)
+print("The repr of a few things: %r %r %r %r" % ('hi', 26j, 17.4, len))
 
-# There is also a whole new way of formatting strings
-# that is really nice and super cool and has loads of
-# flexibility and documentation: str.format.
-# Definitely look up the docs on this. It has a lot of
-# nice features, and it's the Way Of The Future (TM).
-print "This is the {0}th time of {1}.".format(17, 30)
+# The format function on strings is the best way
+# to do this.
+print("This is the {0}th time of {1}.".format(17, 30))

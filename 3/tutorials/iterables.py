@@ -43,18 +43,18 @@ import string
 # This is a string, and is therefore iterable
 #
 letters = string.ascii_lowercase
-print letters
+print(letters)
 
 # So, we can get an iterator from it.
 #
 letter_iter = iter(letters)
-print letter_iter
+print(letter_iter)
 
 # And we can call next on it to get a value and advance
 # it.
 #
-print next(letter_iter)
-print next(letter_iter)
+print(next(letter_iter))
+print(next(letter_iter))
 
 # Iterators are iterables that return themselves when
 # asked for an iterator, so they can also be used in
@@ -62,17 +62,17 @@ print next(letter_iter)
 # is already partially consumed.
 #
 for letter in letter_iter:
-  print letter,
+  print(letter)
 print
 
 # Let's advance to the end.
 #
 item_iter = iter((1,2))
-print next(item_iter)
-print next(item_iter)
+print(next(item_iter))
+print(next(item_iter))
 
 # StopIteration exception!
 # "For" loops know how to handle this and exit cleanly
 # when they see StopIteration.
 #
-print next(item_iter)
+print(next(item_iter))

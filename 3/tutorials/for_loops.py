@@ -33,9 +33,9 @@ __doc__ = """For Loops"""
 
 seq = [1, 3, 6, 10]
 
-print "sequence output"
+print("sequence output")
 for x in seq:
-  print x
+  print(x)
 
 
 # Here's a way to add up all of the numbers in a
@@ -43,7 +43,7 @@ for x in seq:
 s = 0
 for x in seq:
   s += x  # Also spelled 's = s + x'
-print "sum", s
+print("sum", s)
 
 # Note that you can also do unpacking assignment
 # in the loop itself:
@@ -51,4 +51,4 @@ print "sum", s
 pairs = [(1, 'a'), (2, 'b'), (3, 'c')]
 
 for x, y in pairs:
-  print "x:", x, "y:", y
+  print("x:", x, "y:", y)

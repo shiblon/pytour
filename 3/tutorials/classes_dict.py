@@ -20,7 +20,7 @@ namespace. Head over the to the code window and
 see what happens when you run it.
 
 Something strange has happened here, though. We
-can print |instance.SomeVariable|, so we might
+can |print(instance.SomeVariable)|, so we might
 expect it to be in the instance dictionary, but it
 seems to be missing.
 
@@ -52,20 +52,20 @@ instance = MyTestClass('some argument')
 
 # Note that instances can access class variables
 # directly, even if they aren't set in __init__.
-print instance.arg
-print instance.SomeVariable
+print(instance.arg)
+print(instance.SomeVariable)
 
 # Let's take a look inside of these, now:
 
-print "INSTANCE:------------------------------"
-print "\t\n".join("{0}: {1!r}".format(k, v)
-                for k, v in instance.__dict__.iteritems())
+print("INSTANCE:------------------------------")
+print("\t\n".join("{0}: {1!r}".format(k, v)
+                  for k, v in instance.__dict__.items()))
 
-print "CLASS:---------------------------------"
-print "\t\n".join("{0}: {1!r}".format(k, v)
-                for k, v in MyTestClass.__dict__.iteritems())
+print("CLASS:---------------------------------")
+print("\t\n".join("{0}: {1!r}".format(k, v)
+                  for k, v in MyTestClass.__dict__.items()))
 
-print "MODULE:--------------------------------"
-print "\t\n".join("{0}: {1!r}".format(k, v)
-                for k, v in string.__dict__.iteritems())
+print("MODULE:--------------------------------")
+print("\t\n".join("{0}: {1!r}".format(k, v)
+                  for k, v in string.__dict__.items()))
 

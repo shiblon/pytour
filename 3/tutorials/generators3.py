@@ -42,13 +42,6 @@ __doc__ = """Refactoring functionality.
 Changes: we now clean out comments and blank lines
 in a different function, and the error message for
 bad dates has the line number in it.
-
->>> list(parsed_measurements(['2012-10-10 5.4', '2012-10-11 5.3']))
-[('2012-10-10', '5.4'), ('2012-10-11', '5.3')]
->>> list(parsed_measurements(['2012-10-10 5.4', '2012-10-09 5.3']))
-Traceback (most recent call last):
-...
-ValueError: Non-increasing (2): 2012-10-10 -> 2012-10-09
 """
 
 def clean_lines(lines):
@@ -76,5 +69,8 @@ def parsed_measurements(lines):
 
 
 if __name__ == '__main__':
-  if not _testmod().failed:
-    print "Success!"
+  _assert_equal([('2012-10-10', '5.4'), ('2012-10-11', '5.3')],
+                list(parsed_measurements(['2012-10-10 5.4',
+                                          '2012-10-11 5.3'])))
+  _assert_raises(ValueError, lambda x: list(parsed_measurements(x)),
+                 ['2012-10-10 5.4', '2012-10-09 5.3'])

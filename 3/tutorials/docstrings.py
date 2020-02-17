@@ -15,7 +15,7 @@ assigned to anything.
 
 The |pydoc| utility and |help| function each
 format these docstrings and display them when
-requested.
+requested (outside the browser).
 
 At the command line, for example, you can type
 
@@ -23,22 +23,13 @@ At the command line, for example, you can type
 
 And get a nice help page made up mostly of module
 docstrings.
-
-In this interactive tutorial, you can instead call
-|help()| at the bottom of the code to see
-something similar in the output window.
-
-Exercises:
-
-- Try running |help()|.
-
-- Try running |help(a_complex_function)|.
 """
 
 __doc__ = """Short description of the module.
 
 A longer description of the module. This docstring can
-be accessed in the module-global __doc__ variable.
+be accessed in the module-global __doc__ variable (in full
+Python environments, not this one).
 """
 
 def a_complex_function(a, b, c):
@@ -54,16 +45,13 @@ def a_complex_function(a, b, c):
   Returns:
     Nothing - awesomeness needs no return value.
   """
-  print "Shhh: it's actually not all that complex:"
-  print a, b, c
+  print("Shhh: it's actually not all that complex:")
+  print(a, b, c)
   # No return statement, or an empty return statement,
   # will implicitly return None.
 
-print "Result of a complex function:"
-print a_complex_function(True, False, [1,2,3,4])
+print("Result of a complex function:")
+print(a_complex_function(True, False, [1,2,3,4]))
 
-print "The module docstring:"
-print __doc__
-
-print "The function docstring:"
-print a_complex_function.__doc__
+print("The function docstring:")
+print(a_complex_function.__doc__)
