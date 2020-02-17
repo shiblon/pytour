@@ -3,7 +3,7 @@ PyTour
 
 An in-browser tour of Python. Suitable for new students, teachers, presenters, etc.
 
-You can use this on the web at http://bouncingchairs.net/pytour, or you can
+You can use this on the web at http://bouncingchairs.net/pytour3, or you can
 clone the source, run server.py locally, and open your browser to the indicated
 URL. Give it a try!
 

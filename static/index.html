@@ -1,7 +1,7 @@
 <!doctype html>
 <html ng-app="runcode">
 <head>
-<title>Interactive Python Tutorial</title>
+<title>Interactive Python 2 Tutorial</title>
 <link rel="icon" type="image/png" href="img/python-powered-h-50x65.png">
 <link rel="stylesheet" href="css/code.css">
 <link rel="stylesheet" href="js/codemirror-5.3/lib/codemirror.css">
@@ -34,10 +34,10 @@
 <div id="main-tour" ng-class="{'hidden': inDiff}">
 <div id="content_container" ng-class="{'collapsed': contentCollapsed}">
   <div id="toc-trigger">
-    <a href="http://python.org/doc/" target="pydocs">Python Docs</a>
+    Python 2 is deprecated! Try <a href="/pytour3">Python 3 Tour</a> : <a href="http://docs.python.org/2/" target="pydocs">Python 2 Docs</a>
   </div>
   <div id="content-header">
-    <h1>Interactive Python Tutorial <span class="toc" ng-class="{'toc-showing': tocShowing}" ng-click="tocShowing = !tocShowing" ng-bind-html="tocShowing | inplaceif : '&#x25b2; TOC' : '&#x25bc; TOC' ">&#x25b2;&#x25bc; TOC</span></h1>
+    <h1>Interactive Python 2 Tutorial <span class="toc" ng-class="{'toc-showing': tocShowing}" ng-click="tocShowing = !tocShowing" ng-bind-html="tocShowing | inplaceif : '&#x25b2; TOC' : '&#x25bc; TOC' ">&#x25b2;&#x25bc; TOC</span></h1>
     <div id="collapser" ng-click="contentCollapsed=true">&gt;&gt;</div>
     <div id="chapter-num">
       <a class="nav" ng-class="{'hidden': chapter <= 1}" href="#/{{prevChapter()}}">&#x25c0;</a>{{chapter}}<a class="nav" ng-class="{'hidden': chapter >= tutorials.length }" href="#/{{nextChapter()}}">&#x25b6;</a>
@@ -58,7 +58,7 @@
     <div id="content_bottom">
       <div id="about">
         <a href="http://github.com/shiblon/pytour">Source at GitHub</a> |
-        by <a href="http://google.com/+ChrisMonson">Chris Monson</a>
+        by <a href="http://github.com/shiblon">Chris Monson</a>
       </div>
       <div id="tutorial_nav">
         <a class="nav" ng-class="{'hidden': chapter <= 1}" href="#/{{prevChapter()}}">&#x25c0;</a>{{chapter}}<a class="nav" ng-class="{'hidden': chapter >= tutorials.length }" href="#/{{nextChapter()}}">&#x25b6;</a>
