@@ -194,7 +194,6 @@ function CodeCtrl($scope, $http, $location, $timeout) {
 
   (function() {
     $scope.tutorials = [];
-    $scope._preamble = '';
     var divs = $('#chapter-contents div');
     var index = 0;
     for (var i=0, l=divs.length; i<l; i++) {
@@ -208,18 +207,14 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       var indent_re = new RegExp('^' + indent, 'mg');
       text = text.replace(indent_re, '');
 
-      if (name == '__preamble__') {
-        $scope._preamble = text;
-      } else {
-        var parsed = parseTutorial(text);
-        $scope.tutorials.push({
-          name: name,
-          index: index++,
-          title: parsed.title,
-          description: parsed.description,
-          code: parsed.code,
-        });
-      }
+      var parsed = parseTutorial(text);
+      $scope.tutorials.push({
+        name: name,
+        index: index++,
+        title: parsed.title,
+        description: parsed.description,
+        code: parsed.code,
+      });
     }
   }());
 
