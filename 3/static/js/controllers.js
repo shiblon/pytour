@@ -354,13 +354,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
           if (code != null && code !== '' && '"\''.includes(code.trim().charAt(0))) {
             code = '__doc__ = ' + code;
           }
-          // Why exec? Because that's by far the easiest way to get all the code
-          // on a single line (so that exception line number reporting works).
-          // We use JSON.stringify because it also happens to play nicely with
-          // just putting quotes around a string and otherwise being
-          // parsimonious with escaping in a way that is Python-compatible, in
-          // our case..
-          var prefixedCode = 'exec(' + JSON.stringify($scope._preamble) + ');' + code;
+          var prefixedCode = 'from _tutorial import help, _assert_equal, _assert_raises;' + code;
           // TODO: figure out localsid stuff and module meaning.
           $B.run_script(prefixedCode, '__main__', 'localsid');
         } catch (err) {

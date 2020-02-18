@@ -45,6 +45,51 @@ class _out:
 
 sys.stdout = _out('stdout')
 sys.stderr = _out('stderr')
+
+
+class TutorialModule:
+    """Class used as module."""
+    @staticmethod
+    def help(*args, **kargs):
+        print("help() not implemented in this environment", file=sys.stderr)
+
+    @staticmethod
+    def _assert_equal(want, got):
+        if want != got:
+            print("assert_equal failed: want:\n\t{!r}\ngot:\n\t{!r}".format(want, got), file=sys.stderr)
+
+    @staticmethod
+    def _assert_raises(errtype, call, *args, **kargs):
+        try:
+            call(*args, **kargs)
+            print("assert_raises failed: no exception thrown, {} expected".format(errtype), file=sys.stderr)
+        except Exception as e:
+            if not isinstance(e, errtype):
+                print("assert_raises failed: want error type {!r}, got\n{}".format(errtype, e), file=sys.stderr)
+            return
+
+
+import importlib.abc
+import importlib.machinery
+import importlib.util
+
+
+class TutorialLoader(importlib.abc.Loader):
+    def create_module(self, spec):
+        return None # default machinery
+
+    def exec_module(self, module):
+        module.__doc__ = 'Pytour tutorial module - provides helpers and overrides.'
+        for name in dir(TutorialModule):
+            if name.startswith('__'):
+                continue
+            setattr(module, name, getattr(TutorialModule, name))
+
+
+tutorial_spec = importlib.machinery.ModuleSpec('_tutorial', loader=TutorialLoader())
+tutorial_module = importlib.util.module_from_spec(tutorial_spec)
+tutorial_spec.loader.exec_module(tutorial_module)
+sys.modules[tutorial_module.__name__] = tutorial_module
 </script>
 <div id="diff" ng-class="{'hidden': !inDiff}">
   <div id="diffview"></div>
