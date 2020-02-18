@@ -194,7 +194,6 @@ function CodeCtrl($scope, $http, $location, $timeout) {
 
   (function() {
     $scope.tutorials = [];
-    $scope._preamble = '';
     var divs = $('#chapter-contents div');
     var index = 0;
     for (var i=0, l=divs.length; i<l; i++) {
@@ -208,18 +207,14 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       var indent_re = new RegExp('^' + indent, 'mg');
       text = text.replace(indent_re, '');
 
-      if (name == '__preamble__') {
-        $scope._preamble = text;
-      } else {
-        var parsed = parseTutorial(text);
-        $scope.tutorials.push({
-          name: name,
-          index: index++,
-          title: parsed.title,
-          description: parsed.description,
-          code: parsed.code,
-        });
-      }
+      var parsed = parseTutorial(text);
+      $scope.tutorials.push({
+        name: name,
+        index: index++,
+        title: parsed.title,
+        description: parsed.description,
+        code: parsed.code,
+      });
     }
   }());
 
@@ -350,13 +345,15 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       $scope.clearOutput();
       started();
       try {
-        var preamble = $scope._preamble + '\n' + makePythonLines($scope.code()) + '\n';
-        preamble = preamble.replace('{.PREAMBLE_LENGTH}', preamble.split('\n').length);
-        var code = preamble + $scope.code() + '\n';
+        var code = $scope.code();
+        // TODO: find first *non-comment* line. This is brittle.
+        if (code != null && code !== '' && '"\''.includes(code.trim().charAt(0))) {
+          code = '__doc__ = ' + code;
+        }
+        var prefixedCode = 'from tutorial import help, _assert_equal, _assert_raises;' + code;
         // TODO: figure out how to set the special var __doc__ properly.
         // TODO: figure out localsid stuff and module meaning.
-        // TODO: figure out why syntax errors don't always make it to the doc window.
-        $B.run_script(code, '__main__', 'localsid');
+        $B.run_script(prefixedCode, '__main__', 'localsid');
       } catch (err) {
         console.error("run_script exception: ", err);
       } finally {
