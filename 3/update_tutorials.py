@@ -52,6 +52,7 @@ class ContentDivParser(HTMLParser.HTMLParser):
 
 def content_lines(tutorials_path):
   tutorials = json.load(open(os.path.join(tutorials_path, '__tutorials__.json')))
+  tutorials.insert(0, '__preamble__')
 
   yield '<!-- Contents of this div are machine-generated.'
   yield '     Edit files in tutorials/ and run update_tutorials.py'

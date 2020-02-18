@@ -194,6 +194,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
 
   (function() {
     $scope.tutorials = [];
+    $scope._preamble = '';
     var divs = $('#chapter-contents div');
     var index = 0;
     for (var i=0, l=divs.length; i<l; i++) {
@@ -207,14 +208,18 @@ function CodeCtrl($scope, $http, $location, $timeout) {
       var indent_re = new RegExp('^' + indent, 'mg');
       text = text.replace(indent_re, '');
 
-      var parsed = parseTutorial(text);
-      $scope.tutorials.push({
-        name: name,
-        index: index++,
-        title: parsed.title,
-        description: parsed.description,
-        code: parsed.code,
-      });
+      if (name == '__preamble__') {
+        $scope._preamble = text;
+      } else {
+        var parsed = parseTutorial(text);
+        $scope.tutorials.push({
+          name: name,
+          index: index++,
+          title: parsed.title,
+          description: parsed.description,
+          code: parsed.code,
+        });
+      }
     }
   }());
 
@@ -349,7 +354,7 @@ function CodeCtrl($scope, $http, $location, $timeout) {
           if (code != null && code !== '' && '"\''.includes(code.trim().charAt(0))) {
             code = '__doc__ = ' + code;
           }
-          var prefixedCode = 'from tutorial import help, _assert_equal, _assert_raises;' + code;
+          var prefixedCode = 'exec(' + JSON.stringify($scope._preamble) + ');' + code;
           // TODO: figure out how to set the special var __doc__ properly.
           // TODO: figure out localsid stuff and module meaning.
           $B.run_script(prefixedCode, '__main__', 'localsid');
