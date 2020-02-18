@@ -361,7 +361,6 @@ function CodeCtrl($scope, $http, $location, $timeout) {
           // parsimonious with escaping in a way that is Python-compatible, in
           // our case..
           var prefixedCode = 'exec(' + JSON.stringify($scope._preamble) + ');' + code;
-          // TODO: figure out how to set the special var __doc__ properly.
           // TODO: figure out localsid stuff and module meaning.
           $B.run_script(prefixedCode, '__main__', 'localsid');
         } catch (err) {
