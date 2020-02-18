@@ -306,10 +306,8 @@ function CodeCtrl($scope, $http, $location, $timeout) {
   // onLoaded is called when the vm has finished initializing.
   function makeRunOnBrython($B) {
     function started() {
-      $scope.$apply(function() {
-        console.log("running code");
-        $scope.codeRunning = true;
-      });
+      console.log("running code");
+      $scope.codeRunning = true;
     }
     function done() {
       $scope.$apply(function() {
@@ -343,22 +341,24 @@ function CodeCtrl($scope, $http, $location, $timeout) {
         return;
       }
       $scope.clearOutput();
-      started();
-      try {
-        var code = $scope.code();
-        // TODO: find first *non-comment* line. This is brittle.
-        if (code != null && code !== '' && '"\''.includes(code.trim().charAt(0))) {
-          code = '__doc__ = ' + code;
+      window.setTimeout(function() {
+        started();
+        try {
+          var code = $scope.code();
+          // TODO: find first *non-comment* line. This is brittle.
+          if (code != null && code !== '' && '"\''.includes(code.trim().charAt(0))) {
+            code = '__doc__ = ' + code;
+          }
+          var prefixedCode = 'from tutorial import help, _assert_equal, _assert_raises;' + code;
+          // TODO: figure out how to set the special var __doc__ properly.
+          // TODO: figure out localsid stuff and module meaning.
+          $B.run_script(prefixedCode, '__main__', 'localsid');
+        } catch (err) {
+          console.error("run_script exception: ", err);
+        } finally {
+          done();
         }
-        var prefixedCode = 'from tutorial import help, _assert_equal, _assert_raises;' + code;
-        // TODO: figure out how to set the special var __doc__ properly.
-        // TODO: figure out localsid stuff and module meaning.
-        $B.run_script(prefixedCode, '__main__', 'localsid');
-      } catch (err) {
-        console.error("run_script exception: ", err);
-      } finally {
-        done();
-      }
+      }, 100);
     }
     loaded();
     return run;

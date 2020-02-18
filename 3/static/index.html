@@ -26,6 +26,7 @@
 <script type="text/python">
 """Preamble for all scripts. Wires up stdout, stderr, etc."""
 from html import escape
+import re # preload for common use
 import sys
 
 from browser import document, html
