@@ -38,8 +38,7 @@ Exercises
   we changed the name of the function to reflect
   what it returns).
 
-- Write a |for| loop in the main code (replace the
-  use of |_testmod| if you want) that
+- Write a |for| loop in the main code that
   outputs the result of |parsed_measurements(...)|
   with some lines of your own.
 """

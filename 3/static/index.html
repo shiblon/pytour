@@ -268,6 +268,11 @@ sys.modules[tutorial_module.__name__] = tutorial_module
     with a number. A variable can contain any kind of
     value.
 
+    An important note: everything in Python, including
+    variables, is *case-sensitive*. That means that
+    the variable |A| is different from the variable |a|.
+    When spelling things, make sure the case is right!
+
     Exercises
 
     - Try assiging to a variable name that starts with a number
@@ -2320,7 +2325,7 @@ sys.modules[tutorial_module.__name__] = tutorial_module
 
     One More Concept
 
-    This is chance to take another deep breath before
+    This is a chance to take another deep breath before
     the plunge. Let's quickly talk about files and
     |with| before we do.
 
@@ -2350,6 +2355,7 @@ sys.modules[tutorial_module.__name__] = tutorial_module
     mutexes, which you want to release after you're
     done with them.
     """
+
 
     def main():
         # With a real file you commonly see
@@ -2493,8 +2499,7 @@ sys.modules[tutorial_module.__name__] = tutorial_module
       we changed the name of the function to reflect
       what it returns).
 
-    - Write a |for| loop in the main code (replace the
-      use of |_testmod| if you want) that
+    - Write a |for| loop in the main code that
       outputs the result of |parsed_measurements(...)|
       with some lines of your own.
     """

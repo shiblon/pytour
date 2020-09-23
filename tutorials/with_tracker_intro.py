@@ -25,7 +25,7 @@ is going well.
 
 One More Concept
 
-This is chance to take another deep breath before
+This is a chance to take another deep breath before
 the plunge. Let's quickly talk about files and
 |with| before we do.
 
@@ -61,4 +61,4 @@ import os.path
 filename = os.path.join("lib", "pypyjs", "lib_pypy", "warnings.py")
 
 with open(filename) as f:
-  print f.read()
+    print f.read()

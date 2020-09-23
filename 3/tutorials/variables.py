@@ -20,6 +20,11 @@ numbers, and the |_| character, but cannot begin
 with a number. A variable can contain any kind of
 value.
 
+An important note: everything in Python, including
+variables, is *case-sensitive*. That means that
+the variable |A| is different from the variable |a|.
+When spelling things, make sure the case is right!
+
 Exercises
 
 - Try assiging to a variable name that starts with a number

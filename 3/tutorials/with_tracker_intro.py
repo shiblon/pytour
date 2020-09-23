@@ -26,7 +26,7 @@ scales to see any progress.
 
 One More Concept
 
-This is chance to take another deep breath before
+This is a chance to take another deep breath before
 the plunge. Let's quickly talk about files and
 |with| before we do.
 
@@ -56,6 +56,7 @@ Another example is synchronization primitives like
 mutexes, which you want to release after you're
 done with them.
 """
+
 
 def main():
     # With a real file you commonly see
